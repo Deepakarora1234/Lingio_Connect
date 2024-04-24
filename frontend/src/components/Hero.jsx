@@ -13,7 +13,7 @@ const Hero = () => {
         <Lottie className=' '  animationData={LanguageAnimation} />
       </div>
       <div className=' tracking-wide text-white flex flex-col gap-28 max-[1248px]:items-center max-[1248px]:gap-14 max-[1248px]:text-4xl  '>
-      <div  className='max-[1248px]:text-7xl text-8xl max-[1024px]:text-6xl max-[375px]:text-5xl '>
+      <div  className=' max-[1248px]:text-7xl text-8xl max-[1024px]:text-6xl max-[375px]:text-5xl '>
        Unlock your potential with the best language tutors.
       </div>
       <div className=''>
