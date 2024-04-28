@@ -18,7 +18,7 @@ export const auth = async (user) => {
   };
 
   export const addTutor = async(data)=>{
-    console.log(data)
+   
     const response = await fetch(`/api/tutor`, {
       method:"POST",
       credentials:"include",
@@ -26,6 +26,7 @@ export const auth = async (user) => {
         "Content-Type":"application/json"
       },
       body:JSON.stringify(data)
+      
 
     })
     const responseBody = await response.json()

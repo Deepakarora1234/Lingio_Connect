@@ -11,7 +11,9 @@ import {useMutation} from "react-query"
 import * as apiClient from "../apiClient.js"
 
 
+
 const AddTutor = () => {
+   
     const formMethods = useForm();
     const {register, handleSubmit, formState: {errors}}  = formMethods
     const mutation = useMutation(apiClient.addTutor,{
@@ -24,7 +26,9 @@ const AddTutor = () => {
     })
     const onSubmit = handleSubmit(async (data) => {
         const file = data.image[0]; 
-        // console.log('File:', file);
+      
+
+        console.log('File:', file);
         if (file) {
             const fileName = new Date().getTime() + '_' + file.name;
             const storage = getStorage(app);
@@ -72,6 +76,7 @@ const AddTutor = () => {
                 return;
             }
         }
+        
         mutation.mutate(data);
     });
     
@@ -130,9 +135,9 @@ const AddTutor = () => {
                 <label className='bg-black p-2 text-xl  text-white  '>
                     Upload profile picture
                 </label>
-            <input className='bg-black p-2 text-sm border-2 text-white  rounded-lg border-cyan-950'  type='file' multiple accept="image/*"  name='image' {...register('image', {required : "Choose an image"})} />
-            {errors.imageFile && (
-                <span className='text-red-700 text-sm'>{errors.imageFile.message}</span>
+            <input className='bg-black p-2 text-sm border-2 text-white  rounded-lg border-cyan-950'  type='file'   name='image' {...register('image')} />
+            {errors.image && (
+                <span className='text-red-700 text-sm'>{errors.image.message}</span>
             )}
             </div>
             <button className='hover:bg-black mt-4 bg-cyan-950 text-white font-bold text-xl p-3 border rounded-lg ' >Add Tutor</button>

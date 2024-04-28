@@ -30,11 +30,7 @@ router.post("/",upload.single("imageFile"), async(req, res)=>{
         console.log(error)
         res.status(500).json("Something went wrong in adding tutor")
     }
-   
-
-
-
-
+  
 })
 export default router
 

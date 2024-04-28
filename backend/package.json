@@ -6,6 +6,7 @@
   "type": "module",
   "scripts": {
     "test": "",
+    "build":"npm install",
     "start": " nodemon src/index.js"
   },
   "author": "",

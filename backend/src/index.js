@@ -6,6 +6,11 @@ import mongoose from "mongoose"
 import authRoutes from "../src/Routes/authRoutes.js"
 import tutorRoutes from "./Routes/tutorRoutes.js"
 import {v2 as cloudinary} from "cloudinary"
+import path from "path"
+
+
+const __dirname = path.resolve()
+
 
 cloudinary.config({
     cloud_name:"dm3jnihfu",
@@ -29,6 +34,12 @@ app.use(cors(
 
 app.use("/api/auth",authRoutes)
 app.use("/api/tutor", tutorRoutes)
+
+app.use(express.static(path.join(__dirname, "../../frontend/dist")))
+
+app.get("*", (req, res)=>{
+    res.sendFile(path.join(__dirname, "frontend", "dist", "index.html"))
+})
 
 
 
