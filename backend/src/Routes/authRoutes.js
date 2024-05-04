@@ -12,7 +12,7 @@ router.post("/", async(req,res)=>{
     const user = await User.findOne({auth0Id,  email})
     if(user)
     {
-        return res.status(200).send()
+        return res.status(200)
 
     }
     const newUser = new User(req.body)

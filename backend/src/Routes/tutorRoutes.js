@@ -32,6 +32,17 @@ router.post("/",upload.single("imageFile"), async(req, res)=>{
     }
   
 })
+router.get("/allTutors", async(req, res)=>{
+    try{
+        const tutors = await Tutor.find()
+        // console.log(tutors)
+        res.json(tutors)
+    }
+    catch(error){
+        console.log(error)
+        res.status(500).json({message:"Something went wrong in fetching tutors"})
+    }
+})
 export default router
 
 

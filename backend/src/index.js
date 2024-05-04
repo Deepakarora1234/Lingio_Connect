@@ -17,8 +17,9 @@ cloudinary.config({
     api_key:"782275286945426",
     api_secret:"WxdHbltJE_GdIRPo-Xfqx29YdUo",
 })
+// console.log(process.env.MONGODB_STRING)
 
-await mongoose.connect(process.env.MONGODB_STRING).then(()=> console.log("connected to database"))
+await mongoose.connect("mongodb+srv://aroradeepak0817:IEXmL1e9UJBH2K61@cluster0.x9xhl3b.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0").then(()=> console.log("connected to database"))
 const app = express()
 app.use(express.json());
 app.use(express.urlencoded({extended : true}));

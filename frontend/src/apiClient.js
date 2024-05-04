@@ -34,4 +34,17 @@ export const auth = async (user) => {
     {
       throw new Error(responseBody.message)
     }
+    
+    
+  }
+
+  export const fetchTutors = async ()=>{
+    const response = await fetch(`/api/tutor/allTutors`)
+    // const responseBody = await response.json()
+    if(!response.ok)
+    {
+      throw new Error("Error fetching tutors")
+    }
+    const responseBody = await response.json()
+    return responseBody
   }
