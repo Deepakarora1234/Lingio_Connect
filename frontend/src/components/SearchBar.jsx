@@ -1,45 +1,13 @@
-import React, { useEffect, useState } from "react";
-import Header from "../components/Header";
-import { useAuth0 } from "@auth0/auth0-react";
-import { useMutation, useQuery } from "react-query";
-import * as apiClient from "../apiClient.js";
+import {React, useState} from 'react'
+import Select from "react-select";
+import Range from "rc-slider/lib/Slider";
+import { useSearchContext } from '../context/SearchContext';
+import { useNavigate } from 'react-router-dom';
 
-import "rc-slider/assets/index.css";
-import TutorCard from "../components/TutorCard.jsx";
-import SearchBar from "../components/SearchBar.jsx";
+const SearchBar = () => {
+  const search = useSearchContext()
+  const navigate = useNavigate()
 
-const Home = () => {
-  const { user, isAuthenticated } = useAuth0();
-
-  const mutation = useMutation(apiClient.auth);
-
-  useEffect(() => {
-    const helper = async () => {
-      if (isAuthenticated) {
-        try {
-          console.log(user);
-          mutation.mutate({
-            auth0Id: user.sub,
-            email: user.email,
-            name: user.name,
-            picture: user.picture,
-          });
-        } catch (error) {
-          console.error("Error:", error);
-        }
-      }
-    };
-    helper();
-  }, [isAuthenticated, user]);
-
-  const {
-    data: tutors,
-    isLoading,
-    isError,
-  } = useQuery("fetchTutors", async () => await apiClient.fetchTutors());
-  console.log(tutors);
-  //   if (isLoading) return <div>Loading...</div>;
-  // if (isError) return <div>Error fetching data</div>;
   const options = [
     { value: "English", label: "English" },
     { value: "German", label: "German" },
@@ -84,6 +52,19 @@ const Home = () => {
     setSelectedDuration(selectedDuration);
     console.log(selectedDuration)
   };
+
+  const handleSubmit = (event)=>{
+      event.preventDefault()
+
+      search.saveSearchValues(
+        selectedOption,
+        selectedPrice,
+        selectedDuration
+      )
+      
+      navigate("/search")
+      
+  }
 
   const customStyles = {
     control: (provided) => ({
@@ -139,34 +120,53 @@ const Home = () => {
       },
     }),
   };
-  const [sliderValue, setSliderValue] = useState(50); // Initial value set to 50
-
- 
-  // const [priceRange, setPriceRange] = useState([0, 1000]);
-  // const handlePriceRangeChange = (newPriceRange) => {
-  //   setPriceRange(newPriceRange);
-  // };
-
   return (
-    <div>
-      <Header />
-      <div className="p-4 text-white text-4xl mt-6 font-bold  ">
-        Online tutors & teachers for private lessons
-      </div>
-      <SearchBar />
-      <div className="flex justify-between">
-        <div className=" grid grid-cols-1 p-2 gap-20 text-white">
-          {tutors && tutors.length > 0 ? (
-            tutors.map((tutor, index) => (
-              <TutorCard key={index} tutor={tutor} />
-            ))
-          ) : (
-            <div>No tutors available</div>
-          )}
-        </div>
-      </div>
+    <div className="grid grid-cols-1 min-[604px]:grid-cols-2 p-3  text-white mt-3">
+    <div className="">
+      <Select
+        className=" text-white p-3"
+        options={options}
+        value={selectedOption}
+        onChange={handleSelectChange}
+        placeholder="English"
+        isSearchable
+        styles={customStyles}
+      />
     </div>
-  );
-};
+     
+      <div className=''>
+        <Select 
+        className=' text-white p-3'
+        options={Priceoptions}
+        value={selectedPrice}
+        onChange={handleSelectChangePrice}
+        placeholder="Price Range"
+        isSearchable
+        styles={customStyles}
+       />
+        </div>
 
-export default Home;
+
+  <div className=''>
+        <Select 
+        className=' text-white p-3'
+        options={Durationoptions}
+        value={selectedDuration}
+        onChange={handleSelectChangeDuration}
+        placeholder="Course Duration"
+        isSearchable
+        styles={customStyles}
+       />
+        </div>
+        <button type='submit' onSubmit={handleSubmit} className="border rounded  bg-cyan-950 text-xl p-2 m-3">
+          Search
+        </button>
+        
+      
+    
+  </div>
+
+  )
+}
+
+export default SearchBar

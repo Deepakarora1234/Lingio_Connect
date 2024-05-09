@@ -9,6 +9,7 @@ import { useAuth0 } from "@auth0/auth0-react";
 import Home from './pages/Home'
 import NavbarMenu from './components/NavbarMenu'
 import AddTutor from "./pages/AddTutor"
+import Search from './pages/Search'
 
 
 function App() {
@@ -21,6 +22,7 @@ function App() {
       <Route path='/' element={!isAuthenticated ? <Welcome /> : <Home />} />
       <Route path = '/sidebar' element={<NavbarMenu />}></Route>
        <Route path='/AddTutor' element= {<AddTutor />} />
+       <Route path='/search' element= {<Search />} />
      
       </Routes>
     </Router>
