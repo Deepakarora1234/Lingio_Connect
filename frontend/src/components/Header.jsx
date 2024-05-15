@@ -24,9 +24,9 @@ const Header = () => {
   return (
     <div className='flex justify-between bg-cyan-950 h-20'>
       <div className='flex items-center p-3 mb-2 ml-1'>
-        <span className='text-white gap-2 flex text-2xl max-[325px]:text-xl'>
+        <Link to={"/home"} className='text-white gap-2 flex text-2xl max-[325px]:text-xl'>
           <LuLanguages className='my-auto' /> Lingio Connect
-        </span>
+        </Link>
       </div>
       <div className='flex gap-4 justify-between items-center mr-6 max-[546px]:mr-0 max-[546px]:gap-2 '>
         {windowWidth <= 700 ? (

@@ -23,6 +23,7 @@ function App() {
       <Route path = '/sidebar' element={<NavbarMenu />}></Route>
        <Route path='/AddTutor' element= {<AddTutor />} />
        <Route path='/search' element= {<Search />} />
+       <Route path='/home' element={!isAuthenticated ? <Welcome /> : <Home />} />
      
       </Routes>
     </Router>

@@ -43,7 +43,61 @@ router.get("/allTutors", async(req, res)=>{
         res.status(500).json({message:"Something went wrong in fetching tutors"})
     }
 })
+
+router.get("/tutorsBasedOnSearch", async(req, res)=>{
+    // console.log(req.query)
+
+    const query = constructSearchQuery(req.query);
+
+    const tutors = await Tutor.find(query)
+    res.json(tutors)
+
+})
+
+
 export default router
+
+const constructSearchQuery = (queryParams)=>{
+
+    let constructedQuery = {}
+    
+
+        if(queryParams.language)
+        {
+            // console.log(queryParams.language)
+            constructedQuery.language = queryParams.language
+        }
+
+        if (queryParams.duration) {
+            const duration = queryParams.duration;
+            if (duration === "below_4") {
+                constructedQuery.courseDuration = { $lt: 4 };
+            } else if (duration === "4_6") {
+                constructedQuery.courseDuration = { $gte: 4, $lte: 6 };
+            } else if (duration === "6_above") {
+                constructedQuery.courseDuration = { $gte: 6 };
+            }
+        }
+        if (queryParams.price) {
+            const price = queryParams.price;
+            if (price === "below_2000") {
+                constructedQuery.cost = { $lt: 2000 };
+            } else if (price === "2000_5000") {
+                constructedQuery.cost = { $gte: 2000, $lte: 5000 };
+            } else if (price === "5000_10000") {
+                constructedQuery.cost = { $gte: 5000, $lte: 10000 };
+                
+            }
+            else if(price === '10000_above'){
+                constructedQuery.cost = {$gte:10000}
+            }
+                
+
+        }
+
+        return constructedQuery
+
+}
 
 
 

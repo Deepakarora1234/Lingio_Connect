@@ -32,9 +32,9 @@ const SearchBar = () => {
   
 
 
-  const [selectedOption, setSelectedOption] = useState(null);
-  const [selectedPrice, setSelectedPrice] = useState(null);
-  const [selectedDuration, setSelectedDuration] = useState(null);
+  const [selectedOption, setSelectedOption] = useState({value:"", label:"Set Language"});
+  const [selectedPrice, setSelectedPrice] = useState({value:"", label:"Set price"});
+  const [selectedDuration, setSelectedDuration] = useState({value:"", label:"Set Duration"});
 
 
 
@@ -65,6 +65,9 @@ const SearchBar = () => {
       navigate("/search")
       
   }
+
+
+
 
   const customStyles = {
     control: (provided) => ({
@@ -121,6 +124,9 @@ const SearchBar = () => {
     }),
   };
   return (
+    <form  onSubmit={handleSubmit}>
+
+    
     <div className="grid grid-cols-1 min-[604px]:grid-cols-2 p-3  text-white mt-3">
     <div className="">
       <Select
@@ -165,6 +171,7 @@ const SearchBar = () => {
       
     
   </div>
+  </form>
 
   )
 }

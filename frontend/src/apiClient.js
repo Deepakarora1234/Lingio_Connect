@@ -48,3 +48,18 @@ export const auth = async (user) => {
     const responseBody = await response.json()
     return responseBody
   }
+
+  export const fetchTutorsBasedOnSearch =  async(searchParams)=>{
+    console.log(searchParams)
+    const queryParams = new URLSearchParams()
+    queryParams.append("language", searchParams.language ? searchParams.language.value : "")
+    queryParams.append("duration", searchParams.duration ? searchParams.duration.value : "")
+    queryParams.append("price",searchParams.price ?  searchParams.price.value : "")
+
+    const response = await fetch(`/api/tutor/tutorsBasedOnSearch?${queryParams}`)
+
+    if(!response.ok)
+    throw new Error("Error fetching tutors based on search")
+
+    return response.json()
+  }

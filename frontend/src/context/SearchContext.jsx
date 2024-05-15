@@ -8,14 +8,14 @@ export const SearchContextProvider = ({children}) =>{
     const [duration, setDuration] = useState(()=>sessionStorage.getItem("duration") || "")
 
     const saveSearchValues = (language, price, duration)=>{
-        setLanguage(language)
-        setPrice(price)
-        setDuration(duration)
        
-
         sessionStorage.setItem("language", language);
         sessionStorage.setItem("price", price);
         sessionStorage.setItem("duration", duration);
+
+        setLanguage(language)
+        setPrice(price)
+        setDuration(duration)
        
     }
     return(

@@ -1,12 +1,22 @@
-import React from 'react'
+import React,{useState} from 'react'
 import { FaGraduationCap } from "react-icons/fa";
 import { IoLanguage } from "react-icons/io5";
 import { FaRupeeSign } from "react-icons/fa";
+import Lottie from 'lottie-react'
+import TutorCardAnimation from "../assets/TutorCard_Animation.json"
 
 const TutorCard = ({tutor}) => {
+  
+  const [isHovered, setIsHovered] = useState(false);
   return (
     //border-2 rounded-md border-cyan-950 min-[1000px]:flex min-[1000px]:w-2/3  justify-between  p-3
-    <div className='border-2 rounded-md border-cyan-950 grid w-2/3 grid-cols-3 p-3 max-[970px]:grid-cols-1  '>
+    <div  className='flex gap-10'>
+
+   
+    <div className='border-2 rounded-md border-cyan-950 grid min-[869px]:w-2/3  grid-cols-3 p-3 max-[970px]:grid-cols-1 '
+    onMouseEnter={() => setIsHovered(true)} // Set isHovered to true on mouse enter
+        onMouseLeave={() => setIsHovered(false)} // Set isHovered to false on mouse leave
+        >
        <div className='grid grid-cols-3 col-span-2 max-[681px]:grid-cols-1 ' >
        <div className='   p-3 col-span-1   '>
        <img className=' object-cover rounded-lg '
@@ -62,6 +72,11 @@ const TutorCard = ({tutor}) => {
      
       
     </div>
+    <div className={`max-[869px]:hidden p-4 ${isHovered ? 'visible' : 'hidden'} `}>
+    <Lottie className='h-40'   animationData={TutorCardAnimation}/>
+    </div>
+    </div>
+    
   )
 }
 
