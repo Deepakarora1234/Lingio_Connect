@@ -4,10 +4,12 @@ import { IoLanguage } from "react-icons/io5";
 import { FaRupeeSign } from "react-icons/fa";
 import Lottie from 'lottie-react'
 import TutorCardAnimation from "../assets/TutorCard_Animation.json"
+import { useNavigate } from 'react-router-dom';
 
 const TutorCard = ({tutor}) => {
   
   const [isHovered, setIsHovered] = useState(false);
+  const navigate = useNavigate()
   return (
     //border-2 rounded-md border-cyan-950 min-[1000px]:flex min-[1000px]:w-2/3  justify-between  p-3
     <div  className='flex gap-10'>
@@ -62,7 +64,7 @@ const TutorCard = ({tutor}) => {
 
       </div>
       <div className='flex flex-col gap-3'>
-      <button className='border rounded px-5 py-2 text-xl  text-white  font bold bg-cyan-950 hover:bg-cyan-700 '> View Details</button>
+      <button onClick={()=>navigate(`/details/${tutor._id}`)} className='border rounded px-5 py-2 text-xl  text-white  font bold bg-cyan-950 hover:bg-cyan-700 '> View Details</button>
       <button className='border-2 border-cyan-950 rounded px-5 py-2 text-xl mt-1  text-white font bold hover:bg-slate-700 hover:border-white '> Send Message</button>
       </div>
      

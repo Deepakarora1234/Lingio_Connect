@@ -32,6 +32,7 @@ router.post("/",upload.single("imageFile"), async(req, res)=>{
     }
   
 })
+
 router.get("/allTutors", async(req, res)=>{
     try{
         const tutors = await Tutor.find()
@@ -52,6 +53,29 @@ router.get("/tutorsBasedOnSearch", async(req, res)=>{
     const tutors = await Tutor.find(query)
     res.json(tutors)
 
+})
+router.get("/:id", async(req, res) => {
+    try {
+        const id = req.params.id.toString();
+        const tutor = await Tutor.findById(id); // Wait for the query to execute and convert to plain JavaScript object
+        res.send(tutor);
+    } catch(error) {
+        console.log(error);
+        res.status(500).json({ message: "Something went wrong in fetching tutor by id" });
+    }
+});
+router.post("/otherTutors", async(req, res)=>{
+    try{
+        const {language, id} = req.body
+        const otherTutors = await Tutor.find({language : language , _id : {$ne : id} })
+
+        res.status(200).json(otherTutors)
+    }
+    catch(error)
+    {
+        console.log(error)
+        res.status(500).json({message : "Something went wrong in fetching other tutors"})
+    }
 })
 
 

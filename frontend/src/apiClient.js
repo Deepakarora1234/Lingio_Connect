@@ -63,3 +63,28 @@ export const auth = async (user) => {
 
     return response.json()
   }
+
+  export const fetchTutorById = async(tutorId)=>{
+
+    const response = await fetch(`/api/tutor/${tutorId}`)
+
+    if(!response.ok)
+      throw new Error("Error fetching tutor by Id")
+
+    return response.json()
+
+  }
+  export const fetchOtherTutors = async(language, id)=>{
+    const response = await fetch(`/api/tutor/otherTutors`,{
+      method:'POST',
+      headers:{
+        "Content-type":'application/json'
+      }, 
+      body: JSON.stringify({language, id})
+
+    })
+    if(!response.ok)
+      throw new Error("Error fetching other tutors")
+
+    return response.json()
+  }

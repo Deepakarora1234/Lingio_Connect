@@ -10,6 +10,7 @@ import Home from './pages/Home'
 import NavbarMenu from './components/NavbarMenu'
 import AddTutor from "./pages/AddTutor"
 import Search from './pages/Search'
+import Details from './pages/Details'
 
 
 function App() {
@@ -23,6 +24,7 @@ function App() {
       <Route path = '/sidebar' element={<NavbarMenu />}></Route>
        <Route path='/AddTutor' element= {<AddTutor />} />
        <Route path='/search' element= {<Search />} />
+       <Route path='/details/:id' element= {<Details />} />
        <Route path='/home' element={!isAuthenticated ? <Welcome /> : <Home />} />
      
       </Routes>
