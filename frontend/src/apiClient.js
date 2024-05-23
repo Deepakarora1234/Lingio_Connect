@@ -88,3 +88,46 @@ export const auth = async (user) => {
 
     return response.json()
   }
+
+  export const fetchCurrentUser = async(auth0Id)=>{
+    const response  = await fetch(`/api/auth/current-user/${auth0Id}`)
+
+    if(!response.ok)
+      throw new Error("Error fetching current user")
+
+    return response.json()
+
+  }
+
+  export const  createPaymentIntent = async(tutorId, userId)=>{
+    const response = await fetch(`/api/tutor/payment-intent`, {
+      method:"POST",
+      headers:{
+        "Content-Type" : "application/json"
+      },
+      body: JSON.stringify({tutorId, userId})
+    })
+    if(!response.ok)
+      throw new Error("Error creating payment-intent")
+
+    return response.json()
+
+  }
+
+  export const createTutorBooking = async(formData)=>{
+  
+    const response = await fetch(`/api/tutor/createBooking`, {
+      method:"POST", 
+      headers:{
+        "Content-Type" : "application/json"
+      },
+      body: JSON.stringify({formData})
+    })
+
+    if(!response.ok)
+      throw new Error("Error creating tutor booking")
+
+
+    return response.json()
+
+  }

@@ -28,4 +28,25 @@ router.post("/", async(req,res)=>{
     
 })
 
+router.get("/current-user/:auth0Id", async(req, res)=>{
+    try{
+        const auth0Id = req.params.auth0Id
+        const currentUser = await User.findOne({auth0Id})
+
+        if(!currentUser)
+            {
+                return res.status(400).json({message : "User not found"})
+            }
+           
+
+        res.status(201).json(currentUser)
+    }
+    catch(error){
+        console.log(error)
+        res.status(500).json({message : "Something went wrong in fetching current user"})
+    }
+   
+
+})
+
 export default router

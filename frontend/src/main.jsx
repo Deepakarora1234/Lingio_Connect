@@ -7,6 +7,7 @@ import { QueryClient, QueryClientProvider } from "react-query";
 import * as apiClient from "./apiClient.js";
 import { useMutation, useQueryClient } from "react-query";
 import { SearchContextProvider } from "./context/SearchContext.jsx";
+import { AppContextProvider } from "./context/AppContext.jsx";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -18,6 +19,7 @@ const queryClient = new QueryClient({
 
 ReactDOM.createRoot(document.getElementById("root")).render(
   <QueryClientProvider client={queryClient}>
+  <AppContextProvider>
     <SearchContextProvider>
       <Auth0Provider
         domain="dev-rzg0uho30sdg4ypr.us.auth0.com"
@@ -29,5 +31,6 @@ ReactDOM.createRoot(document.getElementById("root")).render(
         <App />
       </Auth0Provider>
     </SearchContextProvider>
+    </AppContextProvider>
   </QueryClientProvider>
 );

@@ -1,6 +1,6 @@
 import React from 'react'
 import Header from "../components/Header"
-import { useParams } from 'react-router-dom'
+import { useNavigate, useParams } from 'react-router-dom'
 import { useQuery } from 'react-query'
 import * as apiClient from "../apiClient.js"
 import { IoLanguage } from "react-icons/io5";
@@ -9,16 +9,16 @@ import { FaGraduationCap } from "react-icons/fa";
 import TutorCard2  from "../components/TutorCard2.jsx"
 const Details = () => {
     const {id} = useParams()
+    const navigate = useNavigate()
 
     const {data : tutor} = useQuery(["fetchTutorById", id], ()=> apiClient.fetchTutorById(id))
 
        
     const {data : otherTutors} = useQuery(["fetchOtherTutors", tutor?.language, tutor?._id], ()=> apiClient.fetchOtherTutors(tutor?.language, tutor?._id))
 
-        
-    
     // console.log(tutor)
     console.log(otherTutors)
+
         
   return (
     <div className='flex flex-col' >
@@ -59,7 +59,11 @@ const Details = () => {
    <p className='text-2xl whitespace-normal break-words'>
        {tutor.description}
    </p>
-   <button  className='border mt-10 rounded px-5 py-2 text-2xl tracking-wide   text-white  font bold bg-cyan-950 hover:bg-cyan-700 '> Book Now</button>
+
+   <button onClick={()=> navigate(`/booking/${tutor._id}`)}
+    className='border mt-10 rounded px-5 py-2 text-2xl tracking-wide   text-white  font bold bg-cyan-950 hover:bg-cyan-700 '>
+     Book Now
+     </button>
 
 
    </div>

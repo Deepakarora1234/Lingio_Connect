@@ -11,12 +11,16 @@ import NavbarMenu from './components/NavbarMenu'
 import AddTutor from "./pages/AddTutor"
 import Search from './pages/Search'
 import Details from './pages/Details'
+import Booking from './pages/Booking'
+import { Elements } from '@stripe/react-stripe-js'
+import { useAppContext } from './context/AppContext'
 
 
 function App() {
   const { user, isAuthenticated, isLoading } = useAuth0();
   if(user)
   console.log(user.sub)
+  const {stripePromise} = useAppContext()
   return (
     <Router >
       <Routes>
@@ -25,6 +29,11 @@ function App() {
        <Route path='/AddTutor' element= {<AddTutor />} />
        <Route path='/search' element= {<Search />} />
        <Route path='/details/:id' element= {<Details />} />
+       <Route path='/booking/:id' element= {
+       
+       <Booking />
+     
+       } />
        <Route path='/home' element={!isAuthenticated ? <Welcome /> : <Home />} />
      
       </Routes>
