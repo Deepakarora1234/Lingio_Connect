@@ -182,6 +182,42 @@ router.post("/createBooking", async(req, res)=>{
     }
 })
     
+router.get("/myBookings/:userId", async(req, res)=>{
+
+    try{
+        const userId = req.params.userId
+
+    const tutors = await Tutor.find({
+        bookings: { $elemMatch: { userId } },
+      });
+
+      const results = tutors.map((tutor) => {
+        const userBookings = tutor.bookings.filter(
+          (booking) => booking.userId === userId
+        );
+  
+        const tutorWithUserBookings = {
+          ...tutor.toObject(),
+          bookings: userBookings,
+        };
+  
+        return tutorWithUserBookings;
+      });
+
+
+      res.status(201).send(results)
+  
+    }
+    catch(error){
+        console.log(error)
+        res.status(400).json({message : "Error in fetching bokings"})
+    }
+    
+
+  
+
+
+})
    
 
 

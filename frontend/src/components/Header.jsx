@@ -6,7 +6,7 @@ import NavbarOptions from './NavbarOptions';
 import {Link} from "react-router-dom"
 
 const Header = () => {
-  const { loginWithRedirect, isAuthenticated, logout } = useAuth0();
+  const { loginWithRedirect, isAuthenticated, logout, user } = useAuth0();
   const [windowWidth, setWindowWidth] = useState(window.innerWidth);
 
   useEffect(() => {
@@ -39,7 +39,7 @@ const Header = () => {
               <Link to={"/AddTutor"} className='hover:bg-black hover:cursor-pointer text-white border max-[546px]:px-1 max-[546px]:text-sm px-3 py-1 border-slate-100 rounded'>Add Tutor</Link>
 
             )}
-            <button className='hover:bg-black max-[546px]:px-1 max-[546px]:text-sm hover:cursor-pointer text-white border px-3 py-1 border-slate-100 rounded'>My Tutors</button>
+            <Link to={`/my-tutors`} className='hover:bg-black max-[546px]:px-1 max-[546px]:text-sm hover:cursor-pointer text-white border px-3 py-1 border-slate-100 rounded'>My Tutors</Link>
             <button onClick={!isAuthenticated ? () => loginWithRedirect() : () => logout({ logoutParams: { returnTo: window.location.origin } })} className='hover:bg-black max-[546px]:px-1 max-[546px]:text-sm hover:cursor-pointer text-white border px-3 py-1 border-slate-100 rounded'>{isAuthenticated ? "Logout" : "Login"}</button>
           </div>
         )}

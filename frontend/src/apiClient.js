@@ -131,3 +131,12 @@ export const auth = async (user) => {
     return response.json()
 
   }
+
+  export const fetchMyBookings = async(userId)=>{
+    const response = await fetch(`/api/tutor/myBookings/${userId}`)
+
+    if(!response.ok)
+      throw new Error("Error fetching my bookings")
+
+    return response.json()
+  }

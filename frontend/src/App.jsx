@@ -14,6 +14,7 @@ import Details from './pages/Details'
 import Booking from './pages/Booking'
 import { Elements } from '@stripe/react-stripe-js'
 import { useAppContext } from './context/AppContext'
+import MyTutors from './pages/MyTutors'
 
 
 function App() {
@@ -28,6 +29,7 @@ function App() {
       <Route path = '/sidebar' element={<NavbarMenu />}></Route>
        <Route path='/AddTutor' element= {<AddTutor />} />
        <Route path='/search' element= {<Search />} />
+       <Route path='/my-tutors' element= {<MyTutors />} />
        <Route path='/details/:id' element= {<Details />} />
        <Route path='/booking/:id' element= {
        
