@@ -140,3 +140,36 @@ export const auth = async (user) => {
 
     return response.json()
   }
+
+  export const sendMessage = async(id, userId , message)=>{
+    const response = await fetch(`/api/message/sendMessage`, {
+      method:"POST",
+      headers:{
+        "Content-Type" :"application/json",
+      },
+      body:JSON.stringify({id, userId, message})
+    })
+
+    if(!response.ok)
+      throw new Error("Error sending message")
+
+    return response.json()
+  }
+
+  export const getMessages = async(tutorId, userId)=>{
+    const response = await fetch(`/api/message/getMessages`, {
+      method:"POST",
+      headers:{
+        "Content-Type" :"application/json",
+      },
+      body:JSON.stringify({tutorId, userId})
+
+     
+    })
+    if(!response.ok)
+      throw new Error("Error fetching messages")
+
+    return response.json()
+        
+
+  }

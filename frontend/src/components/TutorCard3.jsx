@@ -4,7 +4,7 @@ import { IoLanguage } from "react-icons/io5";
 import { FaRupeeSign } from "react-icons/fa";
 import Lottie from 'lottie-react'
 import TutorCardAnimation from "../assets/TutorCard_Animation.json"
-import { useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { GiDuration } from "react-icons/gi";
 
 
@@ -47,9 +47,12 @@ const TutorCard3 = ({tutor}) => {
         {tutor.description}
       </div>
 
-        <button className='flex justify-center py-2 font-bold px-5 m-1 rounded-lg text-2xl items-center bg-cyan-950 hover:bg-cyan-800 text-white border'>
+        <Link  to={`/learning/${tutor._id}`}
+          
+        
+        className='flex justify-center py-2 font-bold px-5 m-1 rounded-lg text-2xl items-center bg-cyan-950 hover:bg-cyan-800 text-white border'>
             Start Learning
-        </button>
+        </Link>
        
       
 
