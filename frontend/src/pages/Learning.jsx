@@ -26,14 +26,20 @@ const Learning = () => {
     });
 
     const userId = currentUser?._id;
+    const studentName = currentUser?.name
 
     const mutation = useMutation(({ id, userId, message }) => apiClient.sendMessage(id, userId, message));
     
     const [socket, setSocket] = useState(null);
+    const  [callId, setCallId] = useState("")
 
     useEffect(() => {
         const newSocket = io('https://lingio-connect.onrender.com'); 
         setSocket(newSocket);
+        newSocket.on('receiveCallId', (callId)=>{
+            setCallId(callId)
+
+        })
         return () => newSocket.close();
     }, []);
 
@@ -101,8 +107,8 @@ const Learning = () => {
                                 </div>
                             </div>
                         </div>
-                        <Link className='flex mt-5 justify-center py-2 font-bold px-5 m-1 rounded-lg text-2xl items-center bg-cyan-950 hover:bg-cyan-800 text-white border'>
-                            Join Here
+                        <Link to={`/videoCall/${id}/${userId}/${studentName}`} className='flex mt-5 justify-center py-2 font-bold px-5 m-1 rounded-lg text-2xl items-center bg-cyan-950 hover:bg-cyan-800 text-white border'>
+                            Join Live Session
                         </Link>
                     </div>
                     <form onSubmit={handleSubmit} className='border border-orange-200 flex flex-col p-3'>

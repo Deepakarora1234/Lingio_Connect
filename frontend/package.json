@@ -15,6 +15,7 @@
     "@emotion/styled": "^11.11.5",
     "@mui/material": "^5.15.15",
     "@mui/styled-engine": "^5.15.14",
+    "@stream-io/video-react-sdk": "^1.2.2",
     "@stripe/react-stripe-js": "^2.7.1",
     "@stripe/stripe-js": "^3.4.0",
     "autoprefixer": "^10.4.19",

@@ -16,6 +16,7 @@ import { Elements } from '@stripe/react-stripe-js'
 import { useAppContext } from './context/AppContext'
 import MyTutors from './pages/MyTutors'
 import Learning from './pages/Learning'
+import VideoCall from './pages/VideoCall'
 
 
 function App() {
@@ -33,11 +34,12 @@ function App() {
        <Route path='/learning/:id' element= {<Learning />} />
        <Route path='/my-tutors' element= {<MyTutors />} />
        <Route path='/details/:id' element= {<Details />} />
-       <Route path='/booking/:id' element= {
+       <Route path='/booking/:id' element= { <Booking /> } />
+       <Route path='/videoCall/:tutorId/:studentId/:studentName' element= { <VideoCall /> } />
        
-       <Booking />
+      
      
-       } />
+      
        <Route path='/home' element={!isAuthenticated ? <Welcome /> : <Home />} />
      
       </Routes>

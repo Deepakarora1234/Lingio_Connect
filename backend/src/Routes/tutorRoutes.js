@@ -18,12 +18,12 @@ const upload = multer({
     }
 });
 
-router.post("/",upload.single("imageFile"), async(req, res)=>{
+router.post("/", async(req, res)=>{
     try{
         
         // console.log(req)
         console.log(req.body)
-        console.log(req.file)
+        // console.log(req.file)
         const bookingArray= []
         const data = req.body
         // console.log(imageFile)
