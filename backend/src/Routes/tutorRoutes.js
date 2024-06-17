@@ -3,10 +3,14 @@ import Tutor from "../models/tutor.js"
 import multer from "multer"
 import cloudinary from "cloudinary";
 import Stripe from "stripe"
+import {StreamChat} from "stream-chat"
 
 const stripeKey = "sk_test_51P24TZSCGEvzC7HSiD39Aq7rEDsK6UAg1d5ER9dLNFY6QF0NnaB6ovPW7A0Ru1B0NWoLQVLqS5xr3MFBmPtCAqk000QWiADZNa" 
 
 const stripe = new Stripe(stripeKey)
+
+const apiKey = '9nrade67axhx';
+const apiSecret = 'h8hj799ebzsrc5e2qm5d8fbgftfxm6buagjr5k8vgq8kzexqgryeeh7znru9dmv9';
 
 const router = express.Router()
 
@@ -218,6 +222,28 @@ router.get("/myBookings/:userId", async(req, res)=>{
 
 
 })
+
+router.post("/getToken",async(req, res)=>{
+    try{
+        const {userId} = req.body
+    if (!userId) {
+        return res.status(400).send('tutor ID is required');
+      }
+    
+      const serverClient = StreamChat.getInstance(apiKey, apiSecret);
+      const token = serverClient.createToken(userId);
+      console.log(token)
+      
+      res.send({ token });
+    }
+    catch(error)
+    {
+        console.log(error)
+        res.status(500).json({message:"Something went wrong"})
+    }
+    
+})
+
    
 
 

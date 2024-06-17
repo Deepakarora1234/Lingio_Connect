@@ -173,3 +173,19 @@ export const auth = async (user) => {
         
 
   }
+
+
+  export const getToken = async(userId)=>{
+    console.log(userId)
+    const response  = await fetch (`/api/tutor/getToken`,{
+      method:"POST",
+      headers:{
+        "Content-Type" :"application/json"
+      },
+      body:JSON.stringify({userId})
+    })
+
+    if(!response.ok)
+      throw new Error("Error getting token")
+    return response.json()
+  }
