@@ -67,9 +67,9 @@ const VideoCall = () => {
     console.log(`Current callId state: ${callId}`);
   }, [callId]);
 
-  if (isLoading || !token) {
-    return <div>Loading...</div>;
-  }
+  // if (isLoading || !token) {
+  //   return <div>Loading...</div>;
+  // }
 
   const user = {
     id: userId,
@@ -106,14 +106,14 @@ const VideoCall = () => {
 export default VideoCall;
 
 export const MyUILayout = ({ navigate, tutorId, studentId }) => {
-  const call = useCall();
+  // const call = useCall();
   const { useCallCallingState } = useCallStateHooks();
 
   const callingState = useCallCallingState();
 
-  if (callingState !== CallingState.JOINED) {
-    return <div>Loading...</div>;
-  }
+  // if (callingState !== CallingState.JOINED) {
+  //   return <div>Loading...</div>;
+  // }
 
   return (
     <StreamTheme>
