@@ -116,6 +116,7 @@ const BookingForm = ({currentUser, paymentIntentData, tutorId}) => {
         options={cardElementOptions}
         className='border-2 p-4 min-[476px]:w-[400px]  text-xl text-white rounded-lg border-cyan-950'
          />
+         <div className='text-white text-sm'> For testing, use this card number: 4000 0035 6000 0008 </div>
         <button type='submit' className='hover:bg-black mt-4 bg-cyan-950 text-white font-bold text-xl p-3 border rounded-lg ' >{ isLoading ? "Saving..." : "Confirm Booking"}</button>
         </form>
 

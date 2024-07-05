@@ -141,7 +141,7 @@ const Working = () => {
         </span>
     </div>
     <div className='text-4xl font-bold '>
-        Find your tutor.
+        Connect with your tutor.
     </div>
     <div className='text-white  tracking-wide p-2' >
     Your tutor will guide the way through your first lesson and help you plan your next steps.

@@ -55,6 +55,8 @@ export const auth = async (user) => {
     queryParams.append("language", searchParams.language ? searchParams.language.value : "")
     queryParams.append("duration", searchParams.duration ? searchParams.duration.value : "")
     queryParams.append("price",searchParams.price ?  searchParams.price.value : "")
+    queryParams.append("page", searchParams.page || "")
+
 
     const response = await fetch(`/api/tutor/tutorsBasedOnSearch?${queryParams}`)
 
@@ -187,5 +189,22 @@ export const auth = async (user) => {
 
     if(!response.ok)
       throw new Error("Error getting token")
+    return response.json()
+  }
+
+
+  export const sendReview = async(newReview)=>{
+    console.log("hello")
+    const response = await fetch(`/api/tutor/sendReview`, {
+      method:"POST",
+      headers:{
+        "Content-Type":"application/json"
+      },
+      body: JSON.stringify({newReview})
+    })
+
+    if(!response.ok)
+      throw new Error("Error sending review")
+
     return response.json()
   }

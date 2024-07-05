@@ -5,6 +5,11 @@ const bookingSchema = new mongoose.Schema({
     email:{type:String, required:true},
     name:{type:String },
 })
+const reviewSchema = new mongoose.Schema({
+    student:{type:String , required: true},
+    rating:{type:Number, required:true},
+    description:{type:String, required:true},
+})
 
 const tutorSchema = new mongoose.Schema({
     fullName:{type:String },
@@ -15,7 +20,8 @@ const tutorSchema = new mongoose.Schema({
     cost : {type : Number},
     description : {type : String},
     image:{type:String},
-    bookings : [bookingSchema]
+    bookings : [bookingSchema],
+    reviews :[reviewSchema]
    
 
 })

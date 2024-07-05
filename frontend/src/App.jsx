@@ -17,6 +17,8 @@ import { useAppContext } from './context/AppContext'
 import MyTutors from './pages/MyTutors'
 import Learning from './pages/Learning'
 import VideoCall from './pages/VideoCall'
+import Reviews from './pages/Reviews'
+import AboutUs from './pages/AboutUs'
 
 
 function App() {
@@ -31,10 +33,12 @@ function App() {
       <Route path = '/sidebar' element={<NavbarMenu />}></Route>
        <Route path='/AddTutor' element= {<AddTutor />} />
        <Route path='/search' element= {<Search />} />
+       <Route path='/aboutUs' element= {<AboutUs />} />
        <Route path='/learning/:id' element= {<Learning />} />
        <Route path='/my-tutors' element= {<MyTutors />} />
        <Route path='/details/:id' element= {<Details />} />
        <Route path='/booking/:id' element= { <Booking /> } />
+       <Route path='/reviews/:id' element= { <Reviews /> } />
        <Route path='/videoCall/:tutorId/:studentId/:studentName' element= { <VideoCall /> } />
        
       

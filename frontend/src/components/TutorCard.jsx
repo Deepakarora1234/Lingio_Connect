@@ -2,11 +2,33 @@ import React,{useState} from 'react'
 import { FaGraduationCap } from "react-icons/fa";
 import { IoLanguage } from "react-icons/io5";
 import { FaRupeeSign } from "react-icons/fa";
+import { useMutation, useQuery } from 'react-query'
 import Lottie from 'lottie-react'
 import TutorCardAnimation from "../assets/TutorCard_Animation.json"
 import { useNavigate } from 'react-router-dom';
+import { useAuth0 } from '@auth0/auth0-react'
+import * as apiClient from "../apiClient.js"
 
 const TutorCard = ({tutor}) => {
+  const {user} = useAuth0()
+    const {data :currentUser} = useQuery(["fetchCurrentUser", user?.sub], ()=> apiClient.fetchCurrentUser(user.sub),{
+      enabled:!!user
+    })
+    
+
+    const userId = currentUser?._id
+
+
+    const handleSendMessage = () => {
+      const hasBooking = tutor.bookings.some(booking => booking.userId === userId);
+      console.log(hasBooking)
+      if (hasBooking) {
+        navigate(`/learning/${tutor._id}`);
+      } else {
+        navigate(`/booking/${tutor._id}`);
+      }
+    };
+
   
   const [isHovered, setIsHovered] = useState(false);
   const navigate = useNavigate()
@@ -65,7 +87,8 @@ const TutorCard = ({tutor}) => {
       </div>
       <div className='flex flex-col gap-3'>
       <button onClick={()=>navigate(`/details/${tutor._id}`)} className='border rounded px-5 py-2 text-xl  text-white  font bold bg-cyan-950 hover:bg-cyan-700 '> View Details</button>
-      <button className='border-2 border-cyan-950 rounded px-5 py-2 text-xl mt-1  text-white font bold hover:bg-slate-700 hover:border-white '> Send Message</button>
+      <button   onClick={handleSendMessage}
+       className='border-2 border-cyan-950 rounded px-5 py-2 text-xl mt-1  text-white font bold hover:bg-slate-700 hover:border-white '> Send Message</button>
       </div>
      
        

@@ -1,6 +1,7 @@
 import React from 'react'
 import { LuLanguages } from "react-icons/lu";
 import { FaArrowUp } from "react-icons/fa";
+import {Link} from "react-router-dom"
 
 const Footer = () => {
       const scrollToTop = () => {
@@ -25,9 +26,9 @@ const Footer = () => {
      <div onClick={scrollToTop} className='flex border bg-teal-700 hover:bg-black items-center justify-center mt-[-35px] p-3  rounded-2xl w-3/5 text-white'>
      <FaArrowUp  className='text-white'/>
      </div>
-     <span className='flex p-4 max-[354px]:p-2  max-[354px]:text-sm items-center text-white font-bold'>
+     <Link to={"/aboutUs"} className='flex p-4 max-[354px]:p-2  max-[354px]:text-sm items-center text-white font-bold'>
         About Us
-     </span>
+     </Link>
      </div>
     
     </div>

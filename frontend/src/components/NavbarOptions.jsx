@@ -4,7 +4,9 @@ import { useAuth0 } from "@auth0/auth0-react";
 
 const NavbarOptions = () => {
   const navigate = useNavigate();
-  const {  logout } = useAuth0();
+  const {  logout, isAuthenticated, user,  loginWithRedirect } = useAuth0();
+  const auth0Id = user?.sub
+  const flag = (auth0Id === "google-oauth2|111072593195741566885" || auth0Id === "google-oauth2|106104531043960313648") ? true : false
 
   const handleSelectChange = (event) => {
     const selectedOption = event.target.value;
@@ -17,6 +19,10 @@ const NavbarOptions = () => {
       logout({ logoutParams: { returnTo: window.location.origin } })
       console.log('Logging out');
     }
+    else if(selectedOption === 'Login'){
+      loginWithRedirect()
+
+    }
   };
 
   return (
@@ -26,9 +32,16 @@ const NavbarOptions = () => {
       defaultValue=""
     >
       <option value="" disabled>Options</option>
+      {isAuthenticated && flag && (
       <option value="AddTutor">Add Tutor</option>
+
+      )}
+      {isAuthenticated && (
+
       <option value="MyTutors">My Tutors</option>
-      <option value="Logout">Logout</option>
+      )}
+      
+      <option value={isAuthenticated ? "Logout" : "Login"}>{isAuthenticated ? "Logout" : "Login"}</option>
     </select>
   );
 };

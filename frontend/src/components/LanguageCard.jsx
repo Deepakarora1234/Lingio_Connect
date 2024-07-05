@@ -5,7 +5,7 @@ const LanguageCard = ({language}) => {
   return (
     <div className='flex p-6 border border-cyan-950 rounded-md items-center justify-between'>
     <div className='flex items-center gap-4'>
-      ⭐ 
+       
       <div className='flex text-white  gap-3  flex-col items-center justify-center '>
         <span className='text-4xl' >
             {language} tutors

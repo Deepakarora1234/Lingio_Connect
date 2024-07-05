@@ -13,14 +13,7 @@ import { useMutation, useQueryClient} from "react-query"
 
 const Welcome = () => {
   const { loginWithRedirect, isAuthenticated, logout } = useAuth0();
-  // const navigate = useNavigate();
-  // if(isAuthenticated)
-  // {
-  //       const mutation = useMutation(apiClient.auth)
-  //       mutation.mutate({auth0Id : user.sub, email : user.email , name: user.name})
-
-  //     //  navigate("/home");
-  // }
+  
 
 
   return (

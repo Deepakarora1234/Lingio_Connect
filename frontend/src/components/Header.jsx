@@ -7,6 +7,8 @@ import {Link} from "react-router-dom"
 
 const Header = () => {
   const { loginWithRedirect, isAuthenticated, logout, user } = useAuth0();
+  const auth0Id = user?.sub
+  const flag = (auth0Id === "google-oauth2|111072593195741566885" || auth0Id === "google-oauth2|106104531043960313648") ? true : false
   const [windowWidth, setWindowWidth] = useState(window.innerWidth);
 
   useEffect(() => {
@@ -35,11 +37,14 @@ const Header = () => {
         ) : (
           // Render components for larger screens
           <div className='flex gap-4 justify-between items-center mr-6 max-[546px]:mr-0 max-[546px]:gap-2 '>
-            {isAuthenticated && (
+            {isAuthenticated && flag &&  (
               <Link to={"/AddTutor"} className='hover:bg-black hover:cursor-pointer text-white border max-[546px]:px-1 max-[546px]:text-sm px-3 py-1 border-slate-100 rounded'>Add Tutor</Link>
 
             )}
+            {isAuthenticated && (
             <Link to={`/my-tutors`} className='hover:bg-black max-[546px]:px-1 max-[546px]:text-sm hover:cursor-pointer text-white border px-3 py-1 border-slate-100 rounded'>My Tutors</Link>
+              
+          ) }
             <button onClick={!isAuthenticated ? () => loginWithRedirect() : () => logout({ logoutParams: { returnTo: window.location.origin } })} className='hover:bg-black max-[546px]:px-1 max-[546px]:text-sm hover:cursor-pointer text-white border px-3 py-1 border-slate-100 rounded'>{isAuthenticated ? "Logout" : "Login"}</button>
           </div>
         )}

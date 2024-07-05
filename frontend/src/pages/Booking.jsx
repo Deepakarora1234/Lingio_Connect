@@ -20,6 +20,7 @@ const Booking = () => {
 
 
     const [isSubmitting , setIsSubmitting] = useState(false)
+    const [hasBooked, setHasBooked] = useState(false);
 
     const {id} = useParams()
     const {stripePromise} = useAppContext()
@@ -33,11 +34,20 @@ const Booking = () => {
     
 
     const userId = currentUser?._id
+
+    useEffect(() => {
+      if (tutor && userId) {
+        const hasBooking = tutor.bookings.some(booking => booking.userId === userId);
+        setHasBooked(hasBooking);
+      }
+    }, [tutor, userId]);
+
+
     const {data : paymentIntentData} = useQuery(["createPaymentIntent", id,userId ], ()=>apiClient.createPaymentIntent(id, userId), {
       enabled:!!id && !!userId
 
     })
-
+   
 
     const getTomorrowFormattedDate = () => {
         const tomorrow = addDays(new Date(), 1);
@@ -158,7 +168,9 @@ const Booking = () => {
     </div>
     </div>
 
-    {currentUser && paymentIntentData && (
+    
+
+    {currentUser && paymentIntentData && !hasBooked && (
         
         <Elements
           stripe={stripePromise}
@@ -173,6 +185,13 @@ const Booking = () => {
           />
         </Elements>
       )}
+      {hasBooked &&  (
+        <div className='flex items-center justify-center lg:mt-72 h-40'>
+                <div className='bg-red-500 text-white font-bold text-xl py-4 px-8 rounded-md shadow-md'>
+                  Already booked
+                </div>
+              </div>
+      )}
     
 
     </div>
@@ -186,3 +205,4 @@ const Booking = () => {
 }
 
 export default Booking
+//4000 0035 6000 0008

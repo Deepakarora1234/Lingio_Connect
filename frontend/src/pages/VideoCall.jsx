@@ -67,9 +67,7 @@ const VideoCall = () => {
     console.log(`Current callId state: ${callId}`);
   }, [callId]);
 
-  // if (isLoading || !token) {
-  //   return <div>Loading...</div>;
-  // }
+  
 
   const user = {
     id: userId,
