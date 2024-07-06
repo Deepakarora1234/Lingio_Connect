@@ -15,6 +15,8 @@ const io = new Server(server, {
             "https://lingioconnect-tutor.onrender.com",
             "https://lingio-connect.onrender.com",
             "https://lingio-connect-l8k2.onrender.com",
+            "https://lingio-connect-tutor.onrender.com",
+
         ],
         methods: ["GET", "POST"]
     }
