@@ -14,7 +14,7 @@ const Messages = ({ tutorId, userId }) => {
     const [initialMessages, setInitialMessages] = useState([]);
 
     useEffect(() => {
-        const newSocket = io('https://lingio-connect.onrender.com'); 
+        const newSocket = io('https://lingio-connect-l8k2.onrender.com'); 
         setSocket(newSocket);
 
         newSocket.emit('joinRoom', { senderId: userId, receiverId: tutorId });
