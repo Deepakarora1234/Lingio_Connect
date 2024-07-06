@@ -1,0 +1,298 @@
+From 18c878c3e01b63bfd2f0b6dee12826949cb538de Mon Sep 17 00:00:00 2001
+From: Deepak Arora <arroadeepak0817@gmail.com>
+Date: Mon, 27 May 2024 16:16:04 +0530
+Subject: [PATCH 10/16] added my-bookings page
+
+---
+ backend/src/Routes/tutorRoutes.js         | 36 ++++++++++++
+ frontend/src/App.jsx                      |  2 +
+ frontend/src/apiClient.js                 |  9 +++
+ frontend/src/components/Header.jsx        |  4 +-
+ frontend/src/components/NavbarOptions.jsx | 45 ++++++++++-----
+ frontend/src/components/TutorCard3.jsx    | 67 +++++++++++++++++++++++
+ frontend/src/pages/MyTutors.jsx           | 39 +++++++++++++
+ 7 files changed, 187 insertions(+), 15 deletions(-)
+ create mode 100644 frontend/src/components/TutorCard3.jsx
+ create mode 100644 frontend/src/pages/MyTutors.jsx
+
+diff --git a/backend/src/Routes/tutorRoutes.js b/backend/src/Routes/tutorRoutes.js
+index aa13b1e..6100f31 100644
+--- a/backend/src/Routes/tutorRoutes.js
++++ b/backend/src/Routes/tutorRoutes.js
+@@ -182,6 +182,42 @@ router.post("/createBooking", async(req, res)=>{
+     }
+ })
+     
++router.get("/myBookings/:userId", async(req, res)=>{
++
++    try{
++        const userId = req.params.userId
++
++    const tutors = await Tutor.find({
++        bookings: { $elemMatch: { userId } },
++      });
++
++      const results = tutors.map((tutor) => {
++        const userBookings = tutor.bookings.filter(
++          (booking) => booking.userId === userId
++        );
++  
++        const tutorWithUserBookings = {
++          ...tutor.toObject(),
++          bookings: userBookings,
++        };
++  
++        return tutorWithUserBookings;
++      });
++
++
++      res.status(201).send(results)
++  
++    }
++    catch(error){
++        console.log(error)
++        res.status(400).json({message : "Error in fetching bokings"})
++    }
++    
++
++  
++
++
++})
+    
+ 
+ 
+diff --git a/frontend/src/App.jsx b/frontend/src/App.jsx
+index fd9e021..e17284b 100644
+--- a/frontend/src/App.jsx
++++ b/frontend/src/App.jsx
+@@ -14,6 +14,7 @@ import Details from './pages/Details'
+ import Booking from './pages/Booking'
+ import { Elements } from '@stripe/react-stripe-js'
+ import { useAppContext } from './context/AppContext'
++import MyTutors from './pages/MyTutors'
+ 
+ 
+ function App() {
+@@ -28,6 +29,7 @@ function App() {
+       <Route path = '/sidebar' element={<NavbarMenu />}></Route>
+        <Route path='/AddTutor' element= {<AddTutor />} />
+        <Route path='/search' element= {<Search />} />
++       <Route path='/my-tutors' element= {<MyTutors />} />
+        <Route path='/details/:id' element= {<Details />} />
+        <Route path='/booking/:id' element= {
+        
+diff --git a/frontend/src/apiClient.js b/frontend/src/apiClient.js
+index 7a9964f..994965f 100644
+--- a/frontend/src/apiClient.js
++++ b/frontend/src/apiClient.js
+@@ -131,3 +131,12 @@ export const auth = async (user) => {
+     return response.json()
+ 
+   }
++
++  export const fetchMyBookings = async(userId)=>{
++    const response = await fetch(`/api/tutor/myBookings/${userId}`)
++
++    if(!response.ok)
++      throw new Error("Error fetching my bookings")
++
++    return response.json()
++  }
+diff --git a/frontend/src/components/Header.jsx b/frontend/src/components/Header.jsx
+index 4424494..3e6b063 100644
+--- a/frontend/src/components/Header.jsx
++++ b/frontend/src/components/Header.jsx
+@@ -6,7 +6,7 @@ import NavbarOptions from './NavbarOptions';
+ import {Link} from "react-router-dom"
+ 
+ const Header = () => {
+-  const { loginWithRedirect, isAuthenticated, logout } = useAuth0();
++  const { loginWithRedirect, isAuthenticated, logout, user } = useAuth0();
+   const [windowWidth, setWindowWidth] = useState(window.innerWidth);
+ 
+   useEffect(() => {
+@@ -39,7 +39,7 @@ const Header = () => {
+               <Link to={"/AddTutor"} className='hover:bg-black hover:cursor-pointer text-white border max-[546px]:px-1 max-[546px]:text-sm px-3 py-1 border-slate-100 rounded'>Add Tutor</Link>
+ 
+             )}
+-            <button className='hover:bg-black max-[546px]:px-1 max-[546px]:text-sm hover:cursor-pointer text-white border px-3 py-1 border-slate-100 rounded'>My Tutors</button>
++            <Link to={`/my-tutors`} className='hover:bg-black max-[546px]:px-1 max-[546px]:text-sm hover:cursor-pointer text-white border px-3 py-1 border-slate-100 rounded'>My Tutors</Link>
+             <button onClick={!isAuthenticated ? () => loginWithRedirect() : () => logout({ logoutParams: { returnTo: window.location.origin } })} className='hover:bg-black max-[546px]:px-1 max-[546px]:text-sm hover:cursor-pointer text-white border px-3 py-1 border-slate-100 rounded'>{isAuthenticated ? "Logout" : "Login"}</button>
+           </div>
+         )}
+diff --git a/frontend/src/components/NavbarOptions.jsx b/frontend/src/components/NavbarOptions.jsx
+index ad9fb5f..beb7c1e 100644
+--- a/frontend/src/components/NavbarOptions.jsx
++++ b/frontend/src/components/NavbarOptions.jsx
+@@ -1,17 +1,36 @@
+-import React from 'react'
++import React from 'react';
++import { useNavigate } from 'react-router-dom';
++import { useAuth0 } from "@auth0/auth0-react";
+ 
+ const NavbarOptions = () => {
++  const navigate = useNavigate();
++  const {  logout } = useAuth0();
++
++  const handleSelectChange = (event) => {
++    const selectedOption = event.target.value;
++    if (selectedOption === 'AddTutor') {
++      navigate('/AddTutor');
++    } else if (selectedOption === 'MyTutors') {
++      navigate('/my-tutors');
++    } else if (selectedOption === 'Logout') {
++      // Handle logout logic here, e.g., clear authentication tokens
++      logout({ logoutParams: { returnTo: window.location.origin } })
++      console.log('Logging out');
++    }
++  };
++
+   return (
+-   
+-     <select className=' bg-cyan-950 border-2 mr-2 rounded-full p-1 hover:bg-black  text-white'>
+-        <option>Options</option>
+-        <option>Options</option>
+-        <option>Options</option>
+-        
+-     </select>
+-      
+-    
+-  )
+-}
++    <select 
++      className='bg-cyan-950 border-2 mr-2 rounded-full p-1 hover:bg-black text-white'
++      onChange={handleSelectChange}
++      defaultValue=""
++    >
++      <option value="" disabled>Options</option>
++      <option value="AddTutor">Add Tutor</option>
++      <option value="MyTutors">My Tutors</option>
++      <option value="Logout">Logout</option>
++    </select>
++  );
++};
+ 
+-export default NavbarOptions
++export default NavbarOptions;
+diff --git a/frontend/src/components/TutorCard3.jsx b/frontend/src/components/TutorCard3.jsx
+new file mode 100644
+index 0000000..8fc690f
+--- /dev/null
++++ b/frontend/src/components/TutorCard3.jsx
+@@ -0,0 +1,67 @@
++import React,{useState} from 'react'
++import { FaGraduationCap } from "react-icons/fa";
++import { IoLanguage } from "react-icons/io5";
++import { FaRupeeSign } from "react-icons/fa";
++import Lottie from 'lottie-react'
++import TutorCardAnimation from "../assets/TutorCard_Animation.json"
++import { useNavigate } from 'react-router-dom';
++import { GiDuration } from "react-icons/gi";
++
++
++const TutorCard3 = ({tutor}) => {
++  return (
++    <div  className='flex gap-10'>
++
++   
++    <div className='border-2 rounded-md border-cyan-950 '>
++   
++        
++       {/* <div className='grid grid-cols-3 col-span-2 max-[681px]:grid-cols-1 ' > */}
++       <div className=' flex justify-center   p-3 '>
++       <img className='h-[250px] w-[250px] object-cover rounded-full '
++        src={tutor.image}>
++      </img>
++      </div>
++
++
++
++      <div className='flex flex-col  col-span-2 p-5 text-xl gap-10 flex-auto  text-white ' >
++      <h2 className='text-5xl font-bold flex justify-center'>
++        {tutor.fullName}
++      </h2>
++      <div className='flex flex-col gap-1 text-white'>
++      <div className='flex items-center gap-2'>
++      <FaGraduationCap /> 
++      {tutor.language}
++      </div>
++      <div className='text-white flex items-center gap-2'>
++      <IoLanguage />
++       Speaks {tutor.language} (Native)
++      </div>
++      <div className='text-white flex items-center gap-2'>
++      <GiDuration />
++       Duration  - {tutor.courseDuration} Weeks
++      </div>
++      </div>
++      <div className='mt-3 line-clamp-2' >
++        {tutor.description}
++      </div>
++
++        <button className='flex justify-center py-2 font-bold px-5 m-1 rounded-lg text-2xl items-center bg-cyan-950 hover:bg-cyan-800 text-white border'>
++            Start Learning
++        </button>
++       
++      
++
++
++
++      </div>
++      
++   
++    </div>
++   
++    </div>
++  )
++}
++
++export default TutorCard3
+diff --git a/frontend/src/pages/MyTutors.jsx b/frontend/src/pages/MyTutors.jsx
+new file mode 100644
+index 0000000..6a1f74e
+--- /dev/null
++++ b/frontend/src/pages/MyTutors.jsx
+@@ -0,0 +1,39 @@
++import React from 'react'
++import Header from '../components/Header'
++import { useQuery } from 'react-query'
++import * as apiClient  from "../apiClient.js"
++import { useAuth0 } from "@auth0/auth0-react";
++import TutorCard3 from '../components/TutorCard3.jsx';
++
++const MyTutors = () => {
++    
++    const { user } = useAuth0();
++
++    const auth0Id = user?.sub
++
++    const {data : currentUser} = useQuery(["fetchCurrentUser", auth0Id], ()=>apiClient.fetchCurrentUser(auth0Id))
++
++    const userId = currentUser?._id
++
++    const {data :tutors} = useQuery(["fetchMyBookings", userId], ()=>apiClient.fetchMyBookings(userId))
++    console.log(tutors)
++  return (
++    <div>
++    <Header />
++    <div className='flex justify-center mt-4  p-4 '>
++    <div className='grid grid-cols-1 sm:grid-cols-2  gap-5  p-2'>
++    {
++       tutors && tutors.map((tutor)=>(
++        <TutorCard3 tutor = {tutor} />
++       ))
++    }
++
++    </div>
++
++    </div>
++      
++    </div>
++  )
++}
++
++export default MyTutors
+-- 
+2.41.0.windows.3
+

@@ -1,0 +1,47 @@
+From 6c5487d4a55487b60e6bdcc48c075d4e9d81293f Mon Sep 17 00:00:00 2001
+From: Deepak Arora <arroadeepak0817@gmail.com>
+Date: Sun, 28 Apr 2024 15:33:21 +0530
+Subject: [PATCH 04/16] updated package.json
+
+---
+ backend/package.json | 2 +-
+ backend/src/index.js | 5 ++---
+ 2 files changed, 3 insertions(+), 4 deletions(-)
+
+diff --git a/backend/package.json b/backend/package.json
+index 461da0d..35b7929 100644
+--- a/backend/package.json
++++ b/backend/package.json
+@@ -7,7 +7,7 @@
+   "scripts": {
+     "test": "",
+     "build":"npm install",
+-    "start": " nodemon src/index.js"
++    "start": " node src/index.js"
+   },
+   "author": "",
+   "license": "ISC",
+diff --git a/backend/src/index.js b/backend/src/index.js
+index d98c8a9..0f01a1d 100644
+--- a/backend/src/index.js
++++ b/backend/src/index.js
+@@ -35,14 +35,13 @@ app.use(cors(
+ app.use("/api/auth",authRoutes)
+ app.use("/api/tutor", tutorRoutes)
+ 
+-app.use(express.static(path.join(__dirname, "../../frontend/dist")))
++app.use(express.static(path.join(__dirname, "../frontend/dist")))
+ 
+ app.get("*", (req, res)=>{
+-    res.sendFile(path.join(__dirname, "frontend", "dist", "index.html"))
++    res.sendFile(path.join(__dirname, "../frontend/dist/index.html"))
+ })
+ 
+ 
+-
+ app.listen('7000',()=>{
+     console.log("server running on port 7000")
+ })
+-- 
+2.41.0.windows.3
+

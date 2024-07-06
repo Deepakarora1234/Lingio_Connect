@@ -35,7 +35,7 @@ const VideoCall = () => {
   const token = tokenData?.token;
 
   useEffect(() => {
-    const newSocket = io('https://lingio-connect.onrender.com');
+    const newSocket = io('https://lingio-connect-l8k2.onrender.com');
     setSocket(newSocket);
     console.log("Socket connection initialized");
 

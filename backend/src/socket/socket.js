@@ -13,7 +13,8 @@ const io = new Server(server, {
             "http://localhost:5173",
             "http://localhost:5174",
             "https://lingioconnect-tutor.onrender.com",
-            "https://lingio-connect.onrender.com"
+            "https://lingio-connect.onrender.com",
+            "https://lingio-connect-l8k2.onrender.com",
         ],
         methods: ["GET", "POST"]
     }

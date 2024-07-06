@@ -1,0 +1,547 @@
+From 21bbeb21292ae8689c8f75c02b2ec33b75ddbe8f Mon Sep 17 00:00:00 2001
+From: Deepak Arora <arroadeepak0817@gmail.com>
+Date: Sat, 4 May 2024 15:15:40 +0530
+Subject: [PATCH 05/16] tutorCard and home page test code
+
+---
+ backend/src/Routes/authRoutes.js      |   2 +-
+ backend/src/Routes/tutorRoutes.js     |  11 ++
+ backend/src/index.js                  |   3 +-
+ frontend/package-lock.json            |  93 +++++++++++++
+ frontend/package.json                 |   3 +
+ frontend/src/apiClient.js             |  13 ++
+ frontend/src/components/TutorCard.jsx |  68 ++++++++++
+ frontend/src/pages/Home.jsx           | 179 ++++++++++++++++++++++++--
+ 8 files changed, 357 insertions(+), 15 deletions(-)
+ create mode 100644 frontend/src/components/TutorCard.jsx
+
+diff --git a/backend/src/Routes/authRoutes.js b/backend/src/Routes/authRoutes.js
+index d958770..0135d1f 100644
+--- a/backend/src/Routes/authRoutes.js
++++ b/backend/src/Routes/authRoutes.js
+@@ -12,7 +12,7 @@ router.post("/", async(req,res)=>{
+     const user = await User.findOne({auth0Id,  email})
+     if(user)
+     {
+-        return res.status(200).send()
++        return res.status(200)
+ 
+     }
+     const newUser = new User(req.body)
+diff --git a/backend/src/Routes/tutorRoutes.js b/backend/src/Routes/tutorRoutes.js
+index d10c0a5..0c6a09a 100644
+--- a/backend/src/Routes/tutorRoutes.js
++++ b/backend/src/Routes/tutorRoutes.js
+@@ -32,6 +32,17 @@ router.post("/",upload.single("imageFile"), async(req, res)=>{
+     }
+   
+ })
++router.get("/allTutors", async(req, res)=>{
++    try{
++        const tutors = await Tutor.find()
++        // console.log(tutors)
++        res.json(tutors)
++    }
++    catch(error){
++        console.log(error)
++        res.status(500).json({message:"Something went wrong in fetching tutors"})
++    }
++})
+ export default router
+ 
+ 
+diff --git a/backend/src/index.js b/backend/src/index.js
+index 0f01a1d..80d4fc2 100644
+--- a/backend/src/index.js
++++ b/backend/src/index.js
+@@ -17,8 +17,9 @@ cloudinary.config({
+     api_key:"782275286945426",
+     api_secret:"WxdHbltJE_GdIRPo-Xfqx29YdUo",
+ })
++// console.log(process.env.MONGODB_STRING)
+ 
+-await mongoose.connect(process.env.MONGODB_STRING).then(()=> console.log("connected to database"))
++await mongoose.connect("mongodb+srv://aroradeepak0817:IEXmL1e9UJBH2K61@cluster0.x9xhl3b.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0").then(()=> console.log("connected to database"))
+ const app = express()
+ app.use(express.json());
+ app.use(express.urlencoded({extended : true}));
+diff --git a/frontend/package-lock.json b/frontend/package-lock.json
+index d179a1f..494df9b 100644
+--- a/frontend/package-lock.json
++++ b/frontend/package-lock.json
+@@ -19,13 +19,16 @@
+         "firebase": "^10.11.0",
+         "framer-motion": "^11.0.28",
+         "lottie-react": "^2.4.0",
++        "rc-slider": "^10.6.2",
+         "react": "^18.2.0",
+         "react-dom": "^18.2.0",
++        "react-dropdown": "^1.11.0",
+         "react-hook-form": "^7.51.3",
+         "react-icons": "^5.0.1",
+         "react-intersection-observer": "^9.8.2",
+         "react-query": "^3.39.3",
+         "react-router-dom": "^6.22.3",
++        "react-select": "^5.8.0",
+         "react-type-animation": "^3.2.0",
+         "typewriter-effect": "^2.21.0"
+       },
+@@ -2870,6 +2873,11 @@
+         "node": ">= 6"
+       }
+     },
++    "node_modules/classnames": {
++      "version": "2.5.1",
++      "resolved": "https://registry.npmjs.org/classnames/-/classnames-2.5.1.tgz",
++      "integrity": "sha512-saHYOzhIQs6wy2sVxTM6bUDsQO4F50V9RQ22qBpEdCW+I+/Wmke2HOl6lS6dTpdxVhb88/I6+Hs+438c3lfUow=="
++    },
+     "node_modules/cliui": {
+       "version": "8.0.1",
+       "resolved": "https://registry.npmjs.org/cliui/-/cliui-8.0.1.tgz",
+@@ -4979,6 +4987,11 @@
+         "remove-accents": "0.5.0"
+       }
+     },
++    "node_modules/memoize-one": {
++      "version": "6.0.0",
++      "resolved": "https://registry.npmjs.org/memoize-one/-/memoize-one-6.0.0.tgz",
++      "integrity": "sha512-rkpe71W0N0c0Xz6QD0eJETuWAJGnJ9afsl1srmwPrI+yBCkge5EycXXbYRyvL29zZVUWQCY7InPRCv3GDXuZNw=="
++    },
+     "node_modules/merge2": {
+       "version": "1.4.1",
+       "resolved": "https://registry.npmjs.org/merge2/-/merge2-1.4.1.tgz",
+@@ -5692,6 +5705,41 @@
+         "performance-now": "^2.1.0"
+       }
+     },
++    "node_modules/rc-slider": {
++      "version": "10.6.2",
++      "resolved": "https://registry.npmjs.org/rc-slider/-/rc-slider-10.6.2.tgz",
++      "integrity": "sha512-FjkoFjyvUQWcBo1F3RgSglky3ar0+qHLM41PlFVYB4Bj3RD8E/Mv7kqMouLFBU+3aFglMzzctAIWRwajEuueSw==",
++      "dependencies": {
++        "@babel/runtime": "^7.10.1",
++        "classnames": "^2.2.5",
++        "rc-util": "^5.36.0"
++      },
++      "engines": {
++        "node": ">=8.x"
++      },
++      "peerDependencies": {
++        "react": ">=16.9.0",
++        "react-dom": ">=16.9.0"
++      }
++    },
++    "node_modules/rc-util": {
++      "version": "5.39.1",
++      "resolved": "https://registry.npmjs.org/rc-util/-/rc-util-5.39.1.tgz",
++      "integrity": "sha512-OW/ERynNDgNr4y0oiFmtes3rbEamXw7GHGbkbNd9iRr7kgT03T6fT0b9WpJ3mbxKhyOcAHnGcIoh5u/cjrC2OQ==",
++      "dependencies": {
++        "@babel/runtime": "^7.18.3",
++        "react-is": "^18.2.0"
++      },
++      "peerDependencies": {
++        "react": ">=16.9.0",
++        "react-dom": ">=16.9.0"
++      }
++    },
++    "node_modules/rc-util/node_modules/react-is": {
++      "version": "18.3.1",
++      "resolved": "https://registry.npmjs.org/react-is/-/react-is-18.3.1.tgz",
++      "integrity": "sha512-/LLMVyas0ljjAtoYiPqYiL8VWXzUUdThrmU5+n20DZv+a+ClRoevUzw5JxU+Ieh5/c87ytoTBV9G1FiKfNJdmg=="
++    },
+     "node_modules/react": {
+       "version": "18.2.0",
+       "resolved": "https://registry.npmjs.org/react/-/react-18.2.0.tgz",
+@@ -5715,6 +5763,18 @@
+         "react": "^18.2.0"
+       }
+     },
++    "node_modules/react-dropdown": {
++      "version": "1.11.0",
++      "resolved": "https://registry.npmjs.org/react-dropdown/-/react-dropdown-1.11.0.tgz",
++      "integrity": "sha512-E2UWetRPxNdIhQahXw6b984ME7WmcgDj9AEAjrtS/oyLCFVo+2qkCfcS06C22JR0Zj+YLnygwv0Ozf6VKKDq7g==",
++      "dependencies": {
++        "classnames": "^2.2.3"
++      },
++      "peerDependencies": {
++        "react": "^0.14.7 || ^15.0.0-0 || ^16.0.0 || ^17.0.0 || ^18.0.0",
++        "react-dom": "^0.14.7 || ^15.0.0-0 || ^16.0.0 || ^17.0.0|| ^18.0.0"
++      }
++    },
+     "node_modules/react-hook-form": {
+       "version": "7.51.3",
+       "resolved": "https://registry.npmjs.org/react-hook-form/-/react-hook-form-7.51.3.tgz",
+@@ -5821,6 +5881,26 @@
+         "react-dom": ">=16.8"
+       }
+     },
++    "node_modules/react-select": {
++      "version": "5.8.0",
++      "resolved": "https://registry.npmjs.org/react-select/-/react-select-5.8.0.tgz",
++      "integrity": "sha512-TfjLDo58XrhP6VG5M/Mi56Us0Yt8X7xD6cDybC7yoRMUNm7BGO7qk8J0TLQOua/prb8vUOtsfnXZwfm30HGsAA==",
++      "dependencies": {
++        "@babel/runtime": "^7.12.0",
++        "@emotion/cache": "^11.4.0",
++        "@emotion/react": "^11.8.1",
++        "@floating-ui/dom": "^1.0.1",
++        "@types/react-transition-group": "^4.4.0",
++        "memoize-one": "^6.0.0",
++        "prop-types": "^15.6.0",
++        "react-transition-group": "^4.3.0",
++        "use-isomorphic-layout-effect": "^1.1.2"
++      },
++      "peerDependencies": {
++        "react": "^16.8.0 || ^17.0.0 || ^18.0.0",
++        "react-dom": "^16.8.0 || ^17.0.0 || ^18.0.0"
++      }
++    },
+     "node_modules/react-transition-group": {
+       "version": "4.4.5",
+       "resolved": "https://registry.npmjs.org/react-transition-group/-/react-transition-group-4.4.5.tgz",
+@@ -6771,6 +6851,19 @@
+         "punycode": "^2.1.0"
+       }
+     },
++    "node_modules/use-isomorphic-layout-effect": {
++      "version": "1.1.2",
++      "resolved": "https://registry.npmjs.org/use-isomorphic-layout-effect/-/use-isomorphic-layout-effect-1.1.2.tgz",
++      "integrity": "sha512-49L8yCO3iGT/ZF9QttjwLF/ZD9Iwto5LnH5LmEdk/6cFmXddqi2ulF0edxTwjj+7mqvpVVGQWvbXZdn32wRSHA==",
++      "peerDependencies": {
++        "react": "^16.8.0 || ^17.0.0 || ^18.0.0"
++      },
++      "peerDependenciesMeta": {
++        "@types/react": {
++          "optional": true
++        }
++      }
++    },
+     "node_modules/util-deprecate": {
+       "version": "1.0.2",
+       "resolved": "https://registry.npmjs.org/util-deprecate/-/util-deprecate-1.0.2.tgz",
+diff --git a/frontend/package.json b/frontend/package.json
+index 4876d46..ec118de 100644
+--- a/frontend/package.json
++++ b/frontend/package.json
+@@ -21,13 +21,16 @@
+     "firebase": "^10.11.0",
+     "framer-motion": "^11.0.28",
+     "lottie-react": "^2.4.0",
++    "rc-slider": "^10.6.2",
+     "react": "^18.2.0",
+     "react-dom": "^18.2.0",
++    "react-dropdown": "^1.11.0",
+     "react-hook-form": "^7.51.3",
+     "react-icons": "^5.0.1",
+     "react-intersection-observer": "^9.8.2",
+     "react-query": "^3.39.3",
+     "react-router-dom": "^6.22.3",
++    "react-select": "^5.8.0",
+     "react-type-animation": "^3.2.0",
+     "typewriter-effect": "^2.21.0"
+   },
+diff --git a/frontend/src/apiClient.js b/frontend/src/apiClient.js
+index 22ce439..c90faa2 100644
+--- a/frontend/src/apiClient.js
++++ b/frontend/src/apiClient.js
+@@ -34,4 +34,17 @@ export const auth = async (user) => {
+     {
+       throw new Error(responseBody.message)
+     }
++    
++    
++  }
++
++  export const fetchTutors = async ()=>{
++    const response = await fetch(`/api/tutor/allTutors`)
++    // const responseBody = await response.json()
++    if(!response.ok)
++    {
++      throw new Error("Error fetching tutors")
++    }
++    const responseBody = await response.json()
++    return responseBody
+   }
+diff --git a/frontend/src/components/TutorCard.jsx b/frontend/src/components/TutorCard.jsx
+new file mode 100644
+index 0000000..b0b5e15
+--- /dev/null
++++ b/frontend/src/components/TutorCard.jsx
+@@ -0,0 +1,68 @@
++import React from 'react'
++import { FaGraduationCap } from "react-icons/fa";
++import { IoLanguage } from "react-icons/io5";
++import { FaRupeeSign } from "react-icons/fa";
++
++const TutorCard = ({tutor}) => {
++  return (
++    //border-2 rounded-md border-cyan-950 min-[1000px]:flex min-[1000px]:w-2/3  justify-between  p-3
++    <div className='border-2 rounded-md border-cyan-950 grid w-2/3 grid-cols-3 p-3 max-[970px]:grid-cols-1  '>
++       <div className='grid grid-cols-3 col-span-2 max-[681px]:grid-cols-1 ' >
++       <div className='   p-3 col-span-1   '>
++       <img className=' object-cover rounded-lg '
++        src={tutor.image}>
++      </img>
++      </div>
++
++
++
++      <div className='flex flex-col  col-span-2 p-2 gap-3 flex-auto  text-white ' >
++      <h2 className='text-2xl font-bold'>
++        {tutor.fullName}
++      </h2>
++      <div className='flex flex-col gap-1 text-white'>
++      <div className='flex items-center gap-2'>
++      <FaGraduationCap /> 
++      {tutor.language}
++      </div>
++      <div className='text-white flex items-center gap-2'>
++      <IoLanguage />
++       Speaks {tutor.language} (Native)
++      </div>
++      </div>
++      <div className='mt-3 line-clamp-2' >
++        {tutor.description}
++      </div>
++
++      </div>
++       </div>
++      
++
++
++
++
++      <div className='text-white p-3 gap-2  flex flex-col justify-between'>
++      <div className='flex gap-3 items-center max-[970px]:gap-9 min-[971px]:justify-between '>
++      <div className='flex items-center'>
++      <FaRupeeSign />{tutor.cost}
++      </div>
++      <div className='flex items-center '>
++      {tutor.courseDuration} weeks
++      </div>
++
++      </div>
++      <div className='flex flex-col gap-3'>
++      <button className='border rounded px-5 py-2 text-xl  text-white  font bold bg-cyan-950 hover:bg-cyan-700 '> View Details</button>
++      <button className='border-2 border-cyan-950 rounded px-5 py-2 text-xl mt-1  text-white font bold hover:bg-slate-700 hover:border-white '> Send Message</button>
++      </div>
++     
++       
++      </div>
++      
++     
++      
++    </div>
++  )
++}
++
++export default TutorCard
+diff --git a/frontend/src/pages/Home.jsx b/frontend/src/pages/Home.jsx
+index 7d8968e..684926c 100644
+--- a/frontend/src/pages/Home.jsx
++++ b/frontend/src/pages/Home.jsx
+@@ -1,8 +1,13 @@
+-import React, { useEffect } from 'react';
++import React, { useEffect, useState } from 'react';
+ import Header from '../components/Header';
+ import { useAuth0 } from "@auth0/auth0-react";
+-import { useMutation } from 'react-query';
++import { useMutation , useQuery} from 'react-query';
+ import * as apiClient from "../apiClient.js"
++import Select from 'react-select';
++import Range from 'rc-slider/lib/Slider';
++import 'rc-slider/assets/index.css';
++import TutorCard from '../components/TutorCard.jsx';
++
+ 
+ const Home = () => {
+     const { user, isAuthenticated } = useAuth0();
+@@ -10,27 +15,175 @@ const Home = () => {
+     const mutation = useMutation(apiClient.auth);
+ 
+     useEffect(() => {
+-        // const fetchData = async () => {
++          const helper= async()=>{
+             if (isAuthenticated) {
+-                try {
+-                    console.log(user)
+-                    mutation.mutate({auth0Id : user.sub, email : user.email, name:user.name, picture : user.picture});
+-                    
+-                } catch (error) {
+-                    console.error("Error:", error);
+-                }
+-            }
+-        // };
++              try {
++                  console.log(user)
++                 mutation.mutate({auth0Id : user.sub, email : user.email, name:user.name, picture : user.picture});
++                  
++              } catch (error) {
++                  console.error("Error:", error);
++              }
++          }
++     
++
++          }
++          helper()
++          
++       
++           
+ 
+-        // fetchData();
++        
+     }, [isAuthenticated, user]);
+ 
++    const {data : tutors,isLoading, isError} = useQuery("fetchTutors", async()=> await apiClient.fetchTutors())
++    console.log(tutors)
++  //   if (isLoading) return <div>Loading...</div>;
++  // if (isError) return <div>Error fetching data</div>;
++  
++
++  const options = [
++    { value: 'English', label: 'English' },
++    { value: 'German', label: 'German' },
++    { value: 'Russian', label: 'Russian' },
++    { value: 'Korean', label: 'Korean' },
++    { value: 'Japanese', label: 'Japanese' },
++    { value: 'Spanish', label: 'Spanish' },
++    { value: 'French', label: 'French' },
++   
++  ];
++
++  
++  const [selectedOption, setSelectedOption] = useState(null);
++
++  
++  const handleSelectChange = (selectedOption) => {
++
++    setSelectedOption(selectedOption);
++    console.log(selectedOption)
++  };
++  const customStyles = {
++        control: (provided) => ({
++          ...provided,
++          borderRadius: '0.375rem', 
++          borderColor: '#004250',
++          '&:hover':{
++            borderColor: '#004250',
++          }, 
++          boxShadow: 'none',
++          backgroundColor:'black',
++        //   paddingLeft:'20px',
++        //   paddingRight:'20px',
++          gap:"100px",
++          color:'white',
++          fontWeight: '',
++          fontSize:'1.2rem',
++          display:'flex',
++          justifyContent: 'space-between'
++          
++
++        }),
++        menu: (provided) => ({
++          ...provided,
++          
++          marginTop: '0.5rem', 
++          borderRadius: '0.375rem', 
++          boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)',
++          backgroundColor:'',
++          color:'white'
++         
++        }),
++        placeholder: (provided) => ({
++            ...provided,
++            paddingLeft:'2px',
++        //   paddingRight:'20px',
++            color: 'white', 
++        }),
++      singleValue: (provided) => ({
++        ...provided,
++        
++        color: 'white', 
++      }),
++      input: (provided) => ({
++        ...provided,
++        color: 'white', 
++      }),
++  
++        option: (provided) => ({
++          ...provided,
++          backgroundColor: 'black', 
++          color: 'white', 
++          '&:hover': {
++            backgroundColor: 'black',
++          },
++        }),
++      };
++      const [sliderValue, setSliderValue] = useState(50); // Initial value set to 50
++
++      // Function to handle slider change
++      const handleSliderChange = (event) => {
++        setSliderValue(event.target.value);
++      };
++      const [priceRange, setPriceRange] = useState([0, 1000]);
++    const handlePriceRangeChange = (newPriceRange) => {
++        setPriceRange(newPriceRange);
++    };
++
+     return (
+         <div>
+             <Header />
++            <div className='p-4 text-white text-4xl mt-6 font-bold  '>
++            Online tutors & teachers for private lessons
++            </div>
++            <div className='flex justify-between items-center p-3  text-white mt-3'>
++            <div className=''>
++            <Select 
++            className=' text-white p-3'
++            options={options}
++            value={selectedOption}
++            onChange={handleSelectChange}
++            placeholder="English"
++            isSearchable
++            styles={customStyles}
++           />
++            </div>
++            <div className='flex flex-col gap-3'>
++            <h2>Price Range: {priceRange[0]} rupees - {priceRange[1]} rupees</h2>        
++            <div className=''>
++                <Range
++                       min={0}
++                            max={1000}
++                            value={priceRange}
++                            onChange={setPriceRange}
++                            allowCross={false} // Disable crossing handles
++                            step={1}
++                            marks={{ 0: '0', 1000: '1000' }} // Optional: marks on the slider
++            />
++            </div>
++            </div>
++            
++
++            </div>
++            <div className='flex justify-between' >
++            <div className=' grid grid-cols-1 p-2 gap-20 text-white'>
++            {
++              tutors.map((tutor, index)=>(
++              <TutorCard key={index} tutor={tutor} />
++              ))
++
++            }
++
++            </div>
++            </div>
++           
+         </div>
+     );
+ };
+ 
++
+ export default Home;
+ 
++
++
++
++
+-- 
+2.41.0.windows.3
+

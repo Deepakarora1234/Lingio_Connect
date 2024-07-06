@@ -1,0 +1,1177 @@
+From 95834f74491146f5f97f00db065fd2187f561117 Mon Sep 17 00:00:00 2001
+From: Deepak Arora <arroadeepak0817@gmail.com>
+Date: Wed, 12 Jun 2024 15:16:41 +0530
+Subject: [PATCH 11/16] real time messages
+
+---
+ backend/package-lock.json              | 205 +++++++++++++++++++++++++
+ backend/package.json                   |   1 +
+ backend/src/Routes/messageRoutes.js    |  75 +++++++++
+ backend/src/index.js                   |   7 +-
+ backend/src/models/conversation.js     |  21 +++
+ backend/src/models/message.js          |  24 +++
+ backend/src/socket/socket.js           |  70 +++++++++
+ frontend/1                             |   0
+ frontend/package-lock.json             | 129 +++++++++++++++-
+ frontend/package.json                  |   2 +
+ frontend/src/App.jsx                   |   2 +
+ frontend/src/apiClient.js              |  33 ++++
+ frontend/src/components/Message.jsx    |  15 ++
+ frontend/src/components/Messages.jsx   |  55 +++++++
+ frontend/src/components/TutorCard3.jsx |   9 +-
+ frontend/src/context/SocketContext.jsx |  50 ++++++
+ frontend/src/pages/Learning.jsx        | 143 +++++++++++++++++
+ frontend/tailwind.config.js            |   2 +-
+ 18 files changed, 834 insertions(+), 9 deletions(-)
+ create mode 100644 backend/src/Routes/messageRoutes.js
+ create mode 100644 backend/src/models/conversation.js
+ create mode 100644 backend/src/models/message.js
+ create mode 100644 backend/src/socket/socket.js
+ create mode 100644 frontend/1
+ create mode 100644 frontend/src/components/Message.jsx
+ create mode 100644 frontend/src/components/Messages.jsx
+ create mode 100644 frontend/src/context/SocketContext.jsx
+ create mode 100644 frontend/src/pages/Learning.jsx
+
+diff --git a/backend/package-lock.json b/backend/package-lock.json
+index a3f024e..9851a61 100644
+--- a/backend/package-lock.json
++++ b/backend/package-lock.json
+@@ -17,6 +17,7 @@
+         "mongodb": "^6.5.0",
+         "mongoose": "^8.3.2",
+         "multer": "^1.4.5-lts.1",
++        "socket.io": "^4.7.5",
+         "stripe": "^15.7.0"
+       }
+     },
+@@ -604,6 +605,24 @@
+       "resolved": "https://registry.npmjs.org/@protobufjs/utf8/-/utf8-1.1.0.tgz",
+       "integrity": "sha512-Vvn3zZrhQZkkBE8LSuW3em98c0FwgO4nxzv6OdSxPKJIEKY2bGbHn+mhGIPerzI4twdxaP8/0+06HBpwf345Lw=="
+     },
++    "node_modules/@socket.io/component-emitter": {
++      "version": "3.1.2",
++      "resolved": "https://registry.npmjs.org/@socket.io/component-emitter/-/component-emitter-3.1.2.tgz",
++      "integrity": "sha512-9BCxFwvbGg/RsZK9tjXd8s4UcwR0MWeFQ1XEKIQVVvAGJyINdrqKMcTRyLoK8Rse1GjzLV9cwjWV1olXRWEXVA=="
++    },
++    "node_modules/@types/cookie": {
++      "version": "0.4.1",
++      "resolved": "https://registry.npmjs.org/@types/cookie/-/cookie-0.4.1.tgz",
++      "integrity": "sha512-XW/Aa8APYr6jSVVA1y/DEIZX0/GMKLEVekNG727R8cs56ahETkRAy/3DR7+fJyh7oUgGwNQaRfXCun0+KbWY7Q=="
++    },
++    "node_modules/@types/cors": {
++      "version": "2.8.17",
++      "resolved": "https://registry.npmjs.org/@types/cors/-/cors-2.8.17.tgz",
++      "integrity": "sha512-8CGDvrBj1zgo2qE+oS3pOCyYNqCPryMWY2bGfwA0dcfopWGgxs+78df0Rs3rc9THP4JkOhLsAa+15VdpAqkcUA==",
++      "dependencies": {
++        "@types/node": "*"
++      }
++    },
+     "node_modules/@types/node": {
+       "version": "20.12.7",
+       "resolved": "https://registry.npmjs.org/@types/node/-/node-20.12.7.tgz",
+@@ -669,6 +688,14 @@
+       "resolved": "https://registry.npmjs.org/array-flatten/-/array-flatten-1.1.1.tgz",
+       "integrity": "sha512-PCVAQswWemu6UdxsDFFX/+gVeYqKAod3D3UVm91jHwynguOwAvYPhx8nNlM++NqRcK6CxxpUafjmhIdKiHibqg=="
+     },
++    "node_modules/base64id": {
++      "version": "2.0.0",
++      "resolved": "https://registry.npmjs.org/base64id/-/base64id-2.0.0.tgz",
++      "integrity": "sha512-lGe34o6EHj9y3Kts9R4ZYs/Gr+6N7MCaMlIFA3F1R2O5/m7K06AxfSeO5530PEERE6/WyEg3lsuyw4GHlPZHog==",
++      "engines": {
++        "node": "^4.5.0 || >= 5.9"
++      }
++    },
+     "node_modules/body-parser": {
+       "version": "1.20.2",
+       "resolved": "https://registry.npmjs.org/body-parser/-/body-parser-1.20.2.tgz",
+@@ -916,6 +943,63 @@
+         "node": ">= 0.8"
+       }
+     },
++    "node_modules/engine.io": {
++      "version": "6.5.4",
++      "resolved": "https://registry.npmjs.org/engine.io/-/engine.io-6.5.4.tgz",
++      "integrity": "sha512-KdVSDKhVKyOi+r5uEabrDLZw2qXStVvCsEB/LN3mw4WFi6Gx50jTyuxYVCwAAC0U46FdnzP/ScKRBTXb/NiEOg==",
++      "dependencies": {
++        "@types/cookie": "^0.4.1",
++        "@types/cors": "^2.8.12",
++        "@types/node": ">=10.0.0",
++        "accepts": "~1.3.4",
++        "base64id": "2.0.0",
++        "cookie": "~0.4.1",
++        "cors": "~2.8.5",
++        "debug": "~4.3.1",
++        "engine.io-parser": "~5.2.1",
++        "ws": "~8.11.0"
++      },
++      "engines": {
++        "node": ">=10.2.0"
++      }
++    },
++    "node_modules/engine.io-parser": {
++      "version": "5.2.2",
++      "resolved": "https://registry.npmjs.org/engine.io-parser/-/engine.io-parser-5.2.2.tgz",
++      "integrity": "sha512-RcyUFKA93/CXH20l4SoVvzZfrSDMOTUS3bWVpTt2FuFP+XYrL8i8oonHP7WInRyVHXh0n/ORtoeiE1os+8qkSw==",
++      "engines": {
++        "node": ">=10.0.0"
++      }
++    },
++    "node_modules/engine.io/node_modules/cookie": {
++      "version": "0.4.2",
++      "resolved": "https://registry.npmjs.org/cookie/-/cookie-0.4.2.tgz",
++      "integrity": "sha512-aSWTXFzaKWkvHO1Ny/s+ePFpvKsPnjc551iI41v3ny/ow6tBG5Vd+FuqGNhh1LxOmVzOlGUriIlOaokOvhaStA==",
++      "engines": {
++        "node": ">= 0.6"
++      }
++    },
++    "node_modules/engine.io/node_modules/debug": {
++      "version": "4.3.5",
++      "resolved": "https://registry.npmjs.org/debug/-/debug-4.3.5.tgz",
++      "integrity": "sha512-pt0bNEmneDIvdL1Xsd9oDQ/wrQRkXDT4AUWlNZNPKvW5x/jyO9VFXkJUP07vQ2upmw5PlaITaPKc31jK13V+jg==",
++      "dependencies": {
++        "ms": "2.1.2"
++      },
++      "engines": {
++        "node": ">=6.0"
++      },
++      "peerDependenciesMeta": {
++        "supports-color": {
++          "optional": true
++        }
++      }
++    },
++    "node_modules/engine.io/node_modules/ms": {
++      "version": "2.1.2",
++      "resolved": "https://registry.npmjs.org/ms/-/ms-2.1.2.tgz",
++      "integrity": "sha512-sGkPx+VjMtmA6MX27oA4FBFELFCZZ4S4XqeGOXCv68tT+jb3vk/RyaKWP0PTKyWtmLSM0b+adUTEvbs1PEaH2w=="
++    },
+     "node_modules/es-define-property": {
+       "version": "1.0.0",
+       "resolved": "https://registry.npmjs.org/es-define-property/-/es-define-property-1.0.0.tgz",
+@@ -1742,6 +1826,107 @@
+       "resolved": "https://registry.npmjs.org/sift/-/sift-16.0.1.tgz",
+       "integrity": "sha512-Wv6BjQ5zbhW7VFefWusVP33T/EM0vYikCaQ2qR8yULbsilAT8/wQaXvuQ3ptGLpoKx+lihJE3y2UTgKDyyNHZQ=="
+     },
++    "node_modules/socket.io": {
++      "version": "4.7.5",
++      "resolved": "https://registry.npmjs.org/socket.io/-/socket.io-4.7.5.tgz",
++      "integrity": "sha512-DmeAkF6cwM9jSfmp6Dr/5/mfMwb5Z5qRrSXLpo3Fq5SqyU8CMF15jIN4ZhfSwu35ksM1qmHZDQ/DK5XTccSTvA==",
++      "dependencies": {
++        "accepts": "~1.3.4",
++        "base64id": "~2.0.0",
++        "cors": "~2.8.5",
++        "debug": "~4.3.2",
++        "engine.io": "~6.5.2",
++        "socket.io-adapter": "~2.5.2",
++        "socket.io-parser": "~4.2.4"
++      },
++      "engines": {
++        "node": ">=10.2.0"
++      }
++    },
++    "node_modules/socket.io-adapter": {
++      "version": "2.5.4",
++      "resolved": "https://registry.npmjs.org/socket.io-adapter/-/socket.io-adapter-2.5.4.tgz",
++      "integrity": "sha512-wDNHGXGewWAjQPt3pyeYBtpWSq9cLE5UW1ZUPL/2eGK9jtse/FpXib7epSTsz0Q0m+6sg6Y4KtcFTlah1bdOVg==",
++      "dependencies": {
++        "debug": "~4.3.4",
++        "ws": "~8.11.0"
++      }
++    },
++    "node_modules/socket.io-adapter/node_modules/debug": {
++      "version": "4.3.5",
++      "resolved": "https://registry.npmjs.org/debug/-/debug-4.3.5.tgz",
++      "integrity": "sha512-pt0bNEmneDIvdL1Xsd9oDQ/wrQRkXDT4AUWlNZNPKvW5x/jyO9VFXkJUP07vQ2upmw5PlaITaPKc31jK13V+jg==",
++      "dependencies": {
++        "ms": "2.1.2"
++      },
++      "engines": {
++        "node": ">=6.0"
++      },
++      "peerDependenciesMeta": {
++        "supports-color": {
++          "optional": true
++        }
++      }
++    },
++    "node_modules/socket.io-adapter/node_modules/ms": {
++      "version": "2.1.2",
++      "resolved": "https://registry.npmjs.org/ms/-/ms-2.1.2.tgz",
++      "integrity": "sha512-sGkPx+VjMtmA6MX27oA4FBFELFCZZ4S4XqeGOXCv68tT+jb3vk/RyaKWP0PTKyWtmLSM0b+adUTEvbs1PEaH2w=="
++    },
++    "node_modules/socket.io-parser": {
++      "version": "4.2.4",
++      "resolved": "https://registry.npmjs.org/socket.io-parser/-/socket.io-parser-4.2.4.tgz",
++      "integrity": "sha512-/GbIKmo8ioc+NIWIhwdecY0ge+qVBSMdgxGygevmdHj24bsfgtCmcUUcQ5ZzcylGFHsN3k4HB4Cgkl96KVnuew==",
++      "dependencies": {
++        "@socket.io/component-emitter": "~3.1.0",
++        "debug": "~4.3.1"
++      },
++      "engines": {
++        "node": ">=10.0.0"
++      }
++    },
++    "node_modules/socket.io-parser/node_modules/debug": {
++      "version": "4.3.5",
++      "resolved": "https://registry.npmjs.org/debug/-/debug-4.3.5.tgz",
++      "integrity": "sha512-pt0bNEmneDIvdL1Xsd9oDQ/wrQRkXDT4AUWlNZNPKvW5x/jyO9VFXkJUP07vQ2upmw5PlaITaPKc31jK13V+jg==",
++      "dependencies": {
++        "ms": "2.1.2"
++      },
++      "engines": {
++        "node": ">=6.0"
++      },
++      "peerDependenciesMeta": {
++        "supports-color": {
++          "optional": true
++        }
++      }
++    },
++    "node_modules/socket.io-parser/node_modules/ms": {
++      "version": "2.1.2",
++      "resolved": "https://registry.npmjs.org/ms/-/ms-2.1.2.tgz",
++      "integrity": "sha512-sGkPx+VjMtmA6MX27oA4FBFELFCZZ4S4XqeGOXCv68tT+jb3vk/RyaKWP0PTKyWtmLSM0b+adUTEvbs1PEaH2w=="
++    },
++    "node_modules/socket.io/node_modules/debug": {
++      "version": "4.3.5",
++      "resolved": "https://registry.npmjs.org/debug/-/debug-4.3.5.tgz",
++      "integrity": "sha512-pt0bNEmneDIvdL1Xsd9oDQ/wrQRkXDT4AUWlNZNPKvW5x/jyO9VFXkJUP07vQ2upmw5PlaITaPKc31jK13V+jg==",
++      "dependencies": {
++        "ms": "2.1.2"
++      },
++      "engines": {
++        "node": ">=6.0"
++      },
++      "peerDependenciesMeta": {
++        "supports-color": {
++          "optional": true
++        }
++      }
++    },
++    "node_modules/socket.io/node_modules/ms": {
++      "version": "2.1.2",
++      "resolved": "https://registry.npmjs.org/ms/-/ms-2.1.2.tgz",
++      "integrity": "sha512-sGkPx+VjMtmA6MX27oA4FBFELFCZZ4S4XqeGOXCv68tT+jb3vk/RyaKWP0PTKyWtmLSM0b+adUTEvbs1PEaH2w=="
++    },
+     "node_modules/sparse-bitfield": {
+       "version": "3.0.3",
+       "resolved": "https://registry.npmjs.org/sparse-bitfield/-/sparse-bitfield-3.0.3.tgz",
+@@ -1958,6 +2143,26 @@
+         "url": "https://github.com/chalk/wrap-ansi?sponsor=1"
+       }
+     },
++    "node_modules/ws": {
++      "version": "8.11.0",
++      "resolved": "https://registry.npmjs.org/ws/-/ws-8.11.0.tgz",
++      "integrity": "sha512-HPG3wQd9sNQoT9xHyNCXoDUa+Xw/VevmY9FoHyQ+g+rrMn4j6FB4np7Z0OhdTgjx6MgQLK7jwSy1YecU1+4Asg==",
++      "engines": {
++        "node": ">=10.0.0"
++      },
++      "peerDependencies": {
++        "bufferutil": "^4.0.1",
++        "utf-8-validate": "^5.0.2"
++      },
++      "peerDependenciesMeta": {
++        "bufferutil": {
++          "optional": true
++        },
++        "utf-8-validate": {
++          "optional": true
++        }
++      }
++    },
+     "node_modules/xtend": {
+       "version": "4.0.2",
+       "resolved": "https://registry.npmjs.org/xtend/-/xtend-4.0.2.tgz",
+diff --git a/backend/package.json b/backend/package.json
+index a3f04e3..e806351 100644
+--- a/backend/package.json
++++ b/backend/package.json
+@@ -20,6 +20,7 @@
+     "mongodb": "^6.5.0",
+     "mongoose": "^8.3.2",
+     "multer": "^1.4.5-lts.1",
++    "socket.io": "^4.7.5",
+     "stripe": "^15.7.0"
+   }
+ }
+diff --git a/backend/src/Routes/messageRoutes.js b/backend/src/Routes/messageRoutes.js
+new file mode 100644
+index 0000000..229c461
+--- /dev/null
++++ b/backend/src/Routes/messageRoutes.js
+@@ -0,0 +1,75 @@
++import express from "express"
++import Conversation from "../models/conversation.js"
++import Message from "../models/message.js"
++
++
++const router = express.Router()
++
++
++router.post("/sendMessage", async(req,res)=>{
++    try{
++
++        const {id, userId , message} = req.body
++        const senderId = userId
++        const receiverId = id
++
++        let conversation = await Conversation.findOne({
++            participants:{$all:[senderId, receiverId]},
++        })
++
++        if(!conversation)
++            {
++                conversation = await Conversation.create({
++                    participants:[senderId, receiverId]
++                })
++            }
++
++            const newMessage = new Message({
++                senderId,
++                receiverId,
++                message
++            })
++            if(newMessage)
++                {
++                    conversation.messages.push(newMessage._id)
++                }
++
++        await Promise.all([conversation.save(), newMessage.save()])
++
++      
++        
++
++
++        res.status(201).json(newMessage)
++
++    }
++    catch(error){
++        console.log(error)
++        res.status(500).json({message:"Something went wrong"})
++    }
++})
++
++router.post("/getMessages", async(req,res)=>{
++    try{
++        const {tutorId, userId} = req.body
++        const conversation = await Conversation.findOne({
++            participants :{$all:[tutorId, userId]}
++        }).populate("messages")
++
++        if(!conversation)
++            {
++                return res.status(200).json([])
++            }
++
++            const messages = conversation.messages
++            res.status(201).json(messages)
++    }
++    catch(error){
++        console.log(error)
++        res.status(500).json({message:"Something went wrong"})
++
++    }
++})
++
++
++export default router
+diff --git a/backend/src/index.js b/backend/src/index.js
+index 80d4fc2..3dbeced 100644
+--- a/backend/src/index.js
++++ b/backend/src/index.js
+@@ -5,8 +5,10 @@ import cors from "cors"
+ import mongoose from "mongoose"
+ import authRoutes from "../src/Routes/authRoutes.js"
+ import tutorRoutes from "./Routes/tutorRoutes.js"
++import messageRoutes from "./Routes/messageRoutes.js"
+ import {v2 as cloudinary} from "cloudinary"
+ import path from "path"
++import  {app, server, io} from "./socket/socket.js"
+ 
+ 
+ const __dirname = path.resolve()
+@@ -20,7 +22,7 @@ cloudinary.config({
+ // console.log(process.env.MONGODB_STRING)
+ 
+ await mongoose.connect("mongodb+srv://aroradeepak0817:IEXmL1e9UJBH2K61@cluster0.x9xhl3b.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0").then(()=> console.log("connected to database"))
+-const app = express()
++// const app = express()
+ app.use(express.json());
+ app.use(express.urlencoded({extended : true}));
+ const corsOptions ={
+@@ -35,6 +37,7 @@ app.use(cors(
+ 
+ app.use("/api/auth",authRoutes)
+ app.use("/api/tutor", tutorRoutes)
++app.use("/api/message", messageRoutes)
+ 
+ app.use(express.static(path.join(__dirname, "../frontend/dist")))
+ 
+@@ -43,7 +46,7 @@ app.get("*", (req, res)=>{
+ })
+ 
+ 
+-app.listen('7000',()=>{
++server.listen('7000',()=>{
+     console.log("server running on port 7000")
+ })
+ 
+diff --git a/backend/src/models/conversation.js b/backend/src/models/conversation.js
+new file mode 100644
+index 0000000..f37f499
+--- /dev/null
++++ b/backend/src/models/conversation.js
+@@ -0,0 +1,21 @@
++import mongoose from "mongoose"
++
++const conversationSchema = new mongoose.Schema({
++   
++        participants: [{
++            type:String, 
++            required : true
++        }],
++        messages: [
++            {
++                type: mongoose.Schema.Types.ObjectId,
++                ref: 'Message',
++                default: [],
++            }
++        ],
++    
++    
++   
++})
++const Conversation = mongoose.model('Conversation', conversationSchema);
++export default Conversation;
+\ No newline at end of file
+diff --git a/backend/src/models/message.js b/backend/src/models/message.js
+new file mode 100644
+index 0000000..24a177d
+--- /dev/null
++++ b/backend/src/models/message.js
+@@ -0,0 +1,24 @@
++import mongoose from "mongoose"
++
++const MessageSchema = new mongoose.Schema({
++    senderId : {
++        type:String,
++        required:true , 
++    },
++
++    
++     receiverId: {
++        type: String,
++        required: true,
++    },
++    
++    message: {
++        type: String,
++        required: true,
++    }
++
++}, {timestamps:true})
++
++const Message = mongoose.model("Message", MessageSchema)
++
++export default Message
+diff --git a/backend/src/socket/socket.js b/backend/src/socket/socket.js
+new file mode 100644
+index 0000000..5d5b85c
+--- /dev/null
++++ b/backend/src/socket/socket.js
+@@ -0,0 +1,70 @@
++import {Server} from "socket.io"
++import http from "http"
++import express from "express"
++import Conversation from "../models/conversation.js"
++import Message from "../models/message.js"
++
++const app = express()
++
++const server = http.createServer(app)
++
++const io = new Server(server, {
++    cors:{
++      origin:["http://localhost:5173","http://localhost:5174", "https://lingioconnect-tutor.onrender.com","https://lingio-connect.onrender.com" ],
++      methods:["GET", "POST"]
++
++    }
++})
++
++// const userSocketMap = {}
++
++io.on('connection', (socket) => {
++    console.log('a user connected');
++
++    socket.on('joinRoom', ({ senderId, receiverId }) => {
++        const roomId = [senderId, receiverId].sort().join('-');
++        socket.join(roomId);
++    });
++
++    socket.on('sendMessage', async ({ senderId, receiverId, message }) => {
++        try {
++            console.log("hello")
++            let conversation = await Conversation.findOne({
++                participants: { $all: [senderId, receiverId] },
++            });
++
++            if (!conversation) {
++                conversation = await Conversation.create({
++                    participants: [senderId, receiverId],
++                });
++            }
++
++            const newMessage = new Message({
++                senderId,
++                receiverId,
++                message,
++            });
++
++            if (newMessage) {
++                conversation.messages.push(newMessage._id);
++            }
++
++            await Promise.all([conversation.save(), newMessage.save()]);
++
++            const roomId = [senderId, receiverId].sort().join('-');
++            io.to(roomId).emit('receiveMessage', newMessage);
++            console.log("sfhbjhdsfbhjdbs")
++        } catch (error) {
++            console.error(error);
++        }
++    });
++
++    socket.on('disconnect', () => {
++        console.log('user disconnected');
++    });
++});
++
++
++
++export  {app, io, server}
++
+diff --git a/frontend/1 b/frontend/1
+new file mode 100644
+index 0000000..e69de29
+diff --git a/frontend/package-lock.json b/frontend/package-lock.json
+index 1ed8b5f..a58cf1e 100644
+--- a/frontend/package-lock.json
++++ b/frontend/package-lock.json
+@@ -34,12 +34,14 @@
+         "react-select": "^5.8.0",
+         "react-stripe-js": "^1.1.5",
+         "react-type-animation": "^3.2.0",
++        "socket.io-client": "^4.7.5",
+         "typewriter-effect": "^2.21.0"
+       },
+       "devDependencies": {
+         "@types/react": "^18.2.66",
+         "@types/react-dom": "^18.2.22",
+         "@vitejs/plugin-react": "^4.2.1",
++        "daisyui": "^4.11.1",
+         "eslint": "^8.57.0",
+         "eslint-plugin-react": "^7.34.1",
+         "eslint-plugin-react-hooks": "^4.6.0",
+@@ -2243,6 +2245,11 @@
+         "win32"
+       ]
+     },
++    "node_modules/@socket.io/component-emitter": {
++      "version": "3.1.2",
++      "resolved": "https://registry.npmjs.org/@socket.io/component-emitter/-/component-emitter-3.1.2.tgz",
++      "integrity": "sha512-9BCxFwvbGg/RsZK9tjXd8s4UcwR0MWeFQ1XEKIQVVvAGJyINdrqKMcTRyLoK8Rse1GjzLV9cwjWV1olXRWEXVA=="
++    },
+     "node_modules/@stripe/react-stripe-js": {
+       "version": "2.7.1",
+       "resolved": "https://registry.npmjs.org/@stripe/react-stripe-js/-/react-stripe-js-2.7.1.tgz",
+@@ -3081,6 +3088,16 @@
+         "node": ">= 8"
+       }
+     },
++    "node_modules/css-selector-tokenizer": {
++      "version": "0.8.0",
++      "resolved": "https://registry.npmjs.org/css-selector-tokenizer/-/css-selector-tokenizer-0.8.0.tgz",
++      "integrity": "sha512-Jd6Ig3/pe62/qe5SBPTN8h8LeUg/pT4lLgtavPf7updwwHpvFzxvOQBHYj2LZDMjUnBzgvIUSjRcf6oT5HzHFg==",
++      "dev": true,
++      "dependencies": {
++        "cssesc": "^3.0.0",
++        "fastparse": "^1.1.2"
++      }
++    },
+     "node_modules/cssesc": {
+       "version": "3.0.0",
+       "resolved": "https://registry.npmjs.org/cssesc/-/cssesc-3.0.0.tgz",
+@@ -3098,6 +3115,34 @@
+       "resolved": "https://registry.npmjs.org/csstype/-/csstype-3.1.3.tgz",
+       "integrity": "sha512-M1uQkMl8rQK/szD0LNhtqxIPLpimGm8sOBwU7lLnCpSbTyY3yeU1Vc7l4KT5zT4s/yOxHH5O7tIuuLOCnLADRw=="
+     },
++    "node_modules/culori": {
++      "version": "3.3.0",
++      "resolved": "https://registry.npmjs.org/culori/-/culori-3.3.0.tgz",
++      "integrity": "sha512-pHJg+jbuFsCjz9iclQBqyL3B2HLCBF71BwVNujUYEvCeQMvV97R59MNK3R2+jgJ3a1fcZgI9B3vYgz8lzr/BFQ==",
++      "dev": true,
++      "engines": {
++        "node": "^12.20.0 || ^14.13.1 || >=16.0.0"
++      }
++    },
++    "node_modules/daisyui": {
++      "version": "4.11.1",
++      "resolved": "https://registry.npmjs.org/daisyui/-/daisyui-4.11.1.tgz",
++      "integrity": "sha512-obT9CUbQdW6eoHwSeT5VwaRrWlwrM4OT5qlfdJ0oQlSIEYhwnEl2+L2fwu5PioLbitwuMdYC2X8I1cyy8Pf6LQ==",
++      "dev": true,
++      "dependencies": {
++        "css-selector-tokenizer": "^0.8",
++        "culori": "^3",
++        "picocolors": "^1",
++        "postcss-js": "^4"
++      },
++      "engines": {
++        "node": ">=16.9.0"
++      },
++      "funding": {
++        "type": "opencollective",
++        "url": "https://opencollective.com/daisyui"
++      }
++    },
+     "node_modules/data-view-buffer": {
+       "version": "1.0.1",
+       "resolved": "https://registry.npmjs.org/data-view-buffer/-/data-view-buffer-1.0.1.tgz",
+@@ -3162,7 +3207,6 @@
+       "version": "4.3.4",
+       "resolved": "https://registry.npmjs.org/debug/-/debug-4.3.4.tgz",
+       "integrity": "sha512-PRWFHuSU3eDtQJPvnNY7Jcket1j0t5OuOsFzPPzsekD52Zl8qUfFIPEiswXqIvHWGVHOgX+7G/vCNNhehwxfkQ==",
+-      "dev": true,
+       "dependencies": {
+         "ms": "2.1.2"
+       },
+@@ -3278,6 +3322,26 @@
+       "integrity": "sha512-L18DaJsXSUk2+42pv8mLs5jJT2hqFkFE4j21wOmgbUqsZ2hL72NsUU785g9RXgo3s0ZNgVl42TiHp3ZtOv/Vyg==",
+       "dev": true
+     },
++    "node_modules/engine.io-client": {
++      "version": "6.5.3",
++      "resolved": "https://registry.npmjs.org/engine.io-client/-/engine.io-client-6.5.3.tgz",
++      "integrity": "sha512-9Z0qLB0NIisTRt1DZ/8U2k12RJn8yls/nXMZLn+/N8hANT3TcYjKFKcwbw5zFQiN4NTde3TSY9zb79e1ij6j9Q==",
++      "dependencies": {
++        "@socket.io/component-emitter": "~3.1.0",
++        "debug": "~4.3.1",
++        "engine.io-parser": "~5.2.1",
++        "ws": "~8.11.0",
++        "xmlhttprequest-ssl": "~2.0.0"
++      }
++    },
++    "node_modules/engine.io-parser": {
++      "version": "5.2.2",
++      "resolved": "https://registry.npmjs.org/engine.io-parser/-/engine.io-parser-5.2.2.tgz",
++      "integrity": "sha512-RcyUFKA93/CXH20l4SoVvzZfrSDMOTUS3bWVpTt2FuFP+XYrL8i8oonHP7WInRyVHXh0n/ORtoeiE1os+8qkSw==",
++      "engines": {
++        "node": ">=10.0.0"
++      }
++    },
+     "node_modules/error-ex": {
+       "version": "1.3.2",
+       "resolved": "https://registry.npmjs.org/error-ex/-/error-ex-1.3.2.tgz",
+@@ -3848,6 +3912,12 @@
+       "integrity": "sha512-DCXu6Ifhqcks7TZKY3Hxp3y6qphY5SJZmrWMDrKcERSOXWQdMhU9Ig/PYrzyw/ul9jOIyh0N4M0tbC5hodg8dw==",
+       "dev": true
+     },
++    "node_modules/fastparse": {
++      "version": "1.1.2",
++      "resolved": "https://registry.npmjs.org/fastparse/-/fastparse-1.1.2.tgz",
++      "integrity": "sha512-483XLLxTVIwWK3QTrMGRqUfUpoOs/0hbQrl2oz4J0pAcm3A3bu84wxTFqGqkJzewCLdME38xJLJAxBABfQT8sQ==",
++      "dev": true
++    },
+     "node_modules/fastq": {
+       "version": "1.17.1",
+       "resolved": "https://registry.npmjs.org/fastq/-/fastq-1.17.1.tgz",
+@@ -5095,8 +5165,7 @@
+     "node_modules/ms": {
+       "version": "2.1.2",
+       "resolved": "https://registry.npmjs.org/ms/-/ms-2.1.2.tgz",
+-      "integrity": "sha512-sGkPx+VjMtmA6MX27oA4FBFELFCZZ4S4XqeGOXCv68tT+jb3vk/RyaKWP0PTKyWtmLSM0b+adUTEvbs1PEaH2w==",
+-      "dev": true
++      "integrity": "sha512-sGkPx+VjMtmA6MX27oA4FBFELFCZZ4S4XqeGOXCv68tT+jb3vk/RyaKWP0PTKyWtmLSM0b+adUTEvbs1PEaH2w=="
+     },
+     "node_modules/mz": {
+       "version": "2.7.0",
+@@ -6355,6 +6424,32 @@
+         "url": "https://github.com/sponsors/isaacs"
+       }
+     },
++    "node_modules/socket.io-client": {
++      "version": "4.7.5",
++      "resolved": "https://registry.npmjs.org/socket.io-client/-/socket.io-client-4.7.5.tgz",
++      "integrity": "sha512-sJ/tqHOCe7Z50JCBCXrsY3I2k03iOiUe+tj1OmKeD2lXPiGH/RUCdTZFoqVyN7l1MnpIzPrGtLcijffmeouNlQ==",
++      "dependencies": {
++        "@socket.io/component-emitter": "~3.1.0",
++        "debug": "~4.3.2",
++        "engine.io-client": "~6.5.2",
++        "socket.io-parser": "~4.2.4"
++      },
++      "engines": {
++        "node": ">=10.0.0"
++      }
++    },
++    "node_modules/socket.io-parser": {
++      "version": "4.2.4",
++      "resolved": "https://registry.npmjs.org/socket.io-parser/-/socket.io-parser-4.2.4.tgz",
++      "integrity": "sha512-/GbIKmo8ioc+NIWIhwdecY0ge+qVBSMdgxGygevmdHj24bsfgtCmcUUcQ5ZzcylGFHsN3k4HB4Cgkl96KVnuew==",
++      "dependencies": {
++        "@socket.io/component-emitter": "~3.1.0",
++        "debug": "~4.3.1"
++      },
++      "engines": {
++        "node": ">=10.0.0"
++      }
++    },
+     "node_modules/source-map": {
+       "version": "0.5.7",
+       "resolved": "https://registry.npmjs.org/source-map/-/source-map-0.5.7.tgz",
+@@ -7263,6 +7358,34 @@
+       "resolved": "https://registry.npmjs.org/wrappy/-/wrappy-1.0.2.tgz",
+       "integrity": "sha512-l4Sp/DRseor9wL6EvV2+TuQn63dMkPjZ/sp9XkghTEbV9KlPS1xUsZ3u7/IQO4wxtcFB4bgpQPRcR3QCvezPcQ=="
+     },
++    "node_modules/ws": {
++      "version": "8.11.0",
++      "resolved": "https://registry.npmjs.org/ws/-/ws-8.11.0.tgz",
++      "integrity": "sha512-HPG3wQd9sNQoT9xHyNCXoDUa+Xw/VevmY9FoHyQ+g+rrMn4j6FB4np7Z0OhdTgjx6MgQLK7jwSy1YecU1+4Asg==",
++      "engines": {
++        "node": ">=10.0.0"
++      },
++      "peerDependencies": {
++        "bufferutil": "^4.0.1",
++        "utf-8-validate": "^5.0.2"
++      },
++      "peerDependenciesMeta": {
++        "bufferutil": {
++          "optional": true
++        },
++        "utf-8-validate": {
++          "optional": true
++        }
++      }
++    },
++    "node_modules/xmlhttprequest-ssl": {
++      "version": "2.0.0",
++      "resolved": "https://registry.npmjs.org/xmlhttprequest-ssl/-/xmlhttprequest-ssl-2.0.0.tgz",
++      "integrity": "sha512-QKxVRxiRACQcVuQEYFsI1hhkrMlrXHPegbbd1yn9UHOmRxY+si12nQYzri3vbzt8VdTTRviqcKxcyllFas5z2A==",
++      "engines": {
++        "node": ">=0.4.0"
++      }
++    },
+     "node_modules/y18n": {
+       "version": "5.0.8",
+       "resolved": "https://registry.npmjs.org/y18n/-/y18n-5.0.8.tgz",
+diff --git a/frontend/package.json b/frontend/package.json
+index fa4224a..38a4c74 100644
+--- a/frontend/package.json
++++ b/frontend/package.json
+@@ -36,12 +36,14 @@
+     "react-select": "^5.8.0",
+     "react-stripe-js": "^1.1.5",
+     "react-type-animation": "^3.2.0",
++    "socket.io-client": "^4.7.5",
+     "typewriter-effect": "^2.21.0"
+   },
+   "devDependencies": {
+     "@types/react": "^18.2.66",
+     "@types/react-dom": "^18.2.22",
+     "@vitejs/plugin-react": "^4.2.1",
++    "daisyui": "^4.11.1",
+     "eslint": "^8.57.0",
+     "eslint-plugin-react": "^7.34.1",
+     "eslint-plugin-react-hooks": "^4.6.0",
+diff --git a/frontend/src/App.jsx b/frontend/src/App.jsx
+index e17284b..2b816e2 100644
+--- a/frontend/src/App.jsx
++++ b/frontend/src/App.jsx
+@@ -15,6 +15,7 @@ import Booking from './pages/Booking'
+ import { Elements } from '@stripe/react-stripe-js'
+ import { useAppContext } from './context/AppContext'
+ import MyTutors from './pages/MyTutors'
++import Learning from './pages/Learning'
+ 
+ 
+ function App() {
+@@ -29,6 +30,7 @@ function App() {
+       <Route path = '/sidebar' element={<NavbarMenu />}></Route>
+        <Route path='/AddTutor' element= {<AddTutor />} />
+        <Route path='/search' element= {<Search />} />
++       <Route path='/learning/:id' element= {<Learning />} />
+        <Route path='/my-tutors' element= {<MyTutors />} />
+        <Route path='/details/:id' element= {<Details />} />
+        <Route path='/booking/:id' element= {
+diff --git a/frontend/src/apiClient.js b/frontend/src/apiClient.js
+index 994965f..072cf7e 100644
+--- a/frontend/src/apiClient.js
++++ b/frontend/src/apiClient.js
+@@ -140,3 +140,36 @@ export const auth = async (user) => {
+ 
+     return response.json()
+   }
++
++  export const sendMessage = async(id, userId , message)=>{
++    const response = await fetch(`/api/message/sendMessage`, {
++      method:"POST",
++      headers:{
++        "Content-Type" :"application/json",
++      },
++      body:JSON.stringify({id, userId, message})
++    })
++
++    if(!response.ok)
++      throw new Error("Error sending message")
++
++    return response.json()
++  }
++
++  export const getMessages = async(tutorId, userId)=>{
++    const response = await fetch(`/api/message/getMessages`, {
++      method:"POST",
++      headers:{
++        "Content-Type" :"application/json",
++      },
++      body:JSON.stringify({tutorId, userId})
++
++     
++    })
++    if(!response.ok)
++      throw new Error("Error fetching messages")
++
++    return response.json()
++        
++
++  }
+diff --git a/frontend/src/components/Message.jsx b/frontend/src/components/Message.jsx
+new file mode 100644
+index 0000000..aecd3ee
+--- /dev/null
++++ b/frontend/src/components/Message.jsx
+@@ -0,0 +1,15 @@
++import React from 'react';
++
++const Message = ({ message, userId }) => {
++    const fromMe = userId === message.senderId;
++    const chatClassName = fromMe ? "chat chat-end" : "chat chat-start";
++    return (
++        <div className={`${chatClassName} overflow-auto my-auto `}>
++            <div className="bg-cyan-950 text-white p-2 rounded max-w-xs  lg:max-w-lg break-words whitespace-normal">
++                {message.message}
++            </div>
++        </div>
++    );
++}
++
++export default Message;
+diff --git a/frontend/src/components/Messages.jsx b/frontend/src/components/Messages.jsx
+new file mode 100644
+index 0000000..87319ca
+--- /dev/null
++++ b/frontend/src/components/Messages.jsx
+@@ -0,0 +1,55 @@
++import React, { useEffect, useRef, useState } from 'react';
++import * as apiClient from "../apiClient.js";
++import { useQuery } from "react-query";
++import Message from './Message.jsx';
++import io from 'socket.io-client';
++
++const Messages = ({ tutorId, userId }) => {
++    const { data: messages } = useQuery(["getMessages", tutorId, userId], () => apiClient.getMessages(tutorId, userId));
++    const messagesEndRef = useRef(null);
++
++    const [socket, setSocket] = useState(null);
++    const [realTimeMessages, setRealTimeMessages] = useState([]);
++    const [initialMessages, setInitialMessages] = useState([]);
++
++    useEffect(() => {
++        const newSocket = io('https://lingio-connect.onrender.com'); 
++        setSocket(newSocket);
++
++        newSocket.emit('joinRoom', { senderId: userId, receiverId: tutorId });
++
++        newSocket.on('receiveMessage', (message) => {
++            setRealTimeMessages((prevMessages) => [...prevMessages, message]);
++        });
++
++        return () => newSocket.close();
++    }, [tutorId, userId]);
++
++    useEffect(() => {
++        if (messages && initialMessages.length === 0) {
++            setInitialMessages(messages);
++        }
++    }, [messages]);
++
++    useEffect(() => {
++        messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
++    }, [initialMessages, realTimeMessages]);
++
++    return (
++        <div className=' '>
++            {initialMessages.length > 0 && (
++                <div className=''>
++                    {initialMessages.map((message) => (
++                        <Message key={message._id} message={message} userId={userId} />
++                    ))}
++                    {realTimeMessages.map((message) => (
++                        <Message key={message._id} message={message} userId={userId} />
++                    ))}
++                    <div ref={messagesEndRef} />
++                </div>
++            )}
++        </div>
++    );
++}
++
++export default Messages;
+diff --git a/frontend/src/components/TutorCard3.jsx b/frontend/src/components/TutorCard3.jsx
+index 8fc690f..634208a 100644
+--- a/frontend/src/components/TutorCard3.jsx
++++ b/frontend/src/components/TutorCard3.jsx
+@@ -4,7 +4,7 @@ import { IoLanguage } from "react-icons/io5";
+ import { FaRupeeSign } from "react-icons/fa";
+ import Lottie from 'lottie-react'
+ import TutorCardAnimation from "../assets/TutorCard_Animation.json"
+-import { useNavigate } from 'react-router-dom';
++import { Link, useNavigate } from 'react-router-dom';
+ import { GiDuration } from "react-icons/gi";
+ 
+ 
+@@ -47,9 +47,12 @@ const TutorCard3 = ({tutor}) => {
+         {tutor.description}
+       </div>
+ 
+-        <button className='flex justify-center py-2 font-bold px-5 m-1 rounded-lg text-2xl items-center bg-cyan-950 hover:bg-cyan-800 text-white border'>
++        <Link  to={`/learning/${tutor._id}`}
++          
++        
++        className='flex justify-center py-2 font-bold px-5 m-1 rounded-lg text-2xl items-center bg-cyan-950 hover:bg-cyan-800 text-white border'>
+             Start Learning
+-        </button>
++        </Link>
+        
+       
+ 
+diff --git a/frontend/src/context/SocketContext.jsx b/frontend/src/context/SocketContext.jsx
+new file mode 100644
+index 0000000..e36a408
+--- /dev/null
++++ b/frontend/src/context/SocketContext.jsx
+@@ -0,0 +1,50 @@
++// import React, { createContext, useState } from "react"
++// import { useAuth0 } from '@auth0/auth0-react'
++
++
++
++// const SocketContext = createContext(undefined)
++
++// export const SocketContextProvider = ({children})=>{
++//     const [socket , setSocket] = useState(null)
++
++//     const [onlineTutors, setOnlineTutors] = useState([])
++
++//     const {user} = useAuth0()
++
++//     useEffect(()=>{
++//         if(authUser) {
++//             const socket = io("http://localhost:7000",{
++//                 query:{
++//                     userId : user.sub,
++//                 },
++//             })
++
++//             setSocket(socket)
++
++//             socket.on("getOnlineUsers", (users)=>{
++//                 setOnlineUsers(users)
++//             })
++
++//             return () => socket.close()
++
++//         }else{
++//             if(socket)
++//             {
++//                 socket.close()
++//                 setSocket(null)
++//             }
++
++//         }
++//     }, [authUser])
++
++
++//     return (
++//         <SocketContext.Provider value={{}} >
++//         {
++//             children
++//         }
++
++//         </SocketContext.Provider>
++//     )
++// }
+\ No newline at end of file
+diff --git a/frontend/src/pages/Learning.jsx b/frontend/src/pages/Learning.jsx
+new file mode 100644
+index 0000000..b4a1207
+--- /dev/null
++++ b/frontend/src/pages/Learning.jsx
+@@ -0,0 +1,143 @@
++import React,{useState, useEffect} from 'react'
++import Header from "../components/Header"
++import { useParams } from 'react-router-dom'
++import {useQuery, useMutation} from "react-query"
++import * as apiClient from "../apiClient.js"
++import { FaGraduationCap } from "react-icons/fa";
++import { IoLanguage } from "react-icons/io5";
++import { FaRupeeSign } from "react-icons/fa";
++import Lottie from 'lottie-react'
++import TutorCardAnimation from "../assets/TutorCard_Animation.json"
++import { Link, useNavigate } from 'react-router-dom';
++import { GiDuration } from "react-icons/gi";
++import {BsSend} from "react-icons/bs"
++import { useAuth0 } from '@auth0/auth0-react'
++import Messages from '../components/Messages.jsx'
++
++import io from 'socket.io-client';
++
++const Learning = () => {
++    const { id } = useParams();
++    const [message, setMessage] = useState("");
++    const { data: tutor } = useQuery(["fetchTutorById", id], () => apiClient.fetchTutorById(id));
++    const { user } = useAuth0();
++    const { data: currentUser } = useQuery(["fetchCurrentUser", user?.sub], () => apiClient.fetchCurrentUser(user.sub), {
++        enabled: !!user
++    });
++
++    const userId = currentUser?._id;
++
++    const mutation = useMutation(({ id, userId, message }) => apiClient.sendMessage(id, userId, message));
++    
++    const [socket, setSocket] = useState(null);
++
++    useEffect(() => {
++        const newSocket = io('https://lingio-connect.onrender.com'); 
++        setSocket(newSocket);
++        return () => newSocket.close();
++    }, []);
++
++    const handleSubmit = async (e) => {
++        e.preventDefault();
++        if (!message) return;
++
++        const newMessage = { id, userId, message };
++        // mutation.mutate(newMessage);
++
++        socket.emit('sendMessage', { senderId: userId, receiverId: id, message });
++
++        setMessage("");
++    };
++
++    const handleKeyPress = async (e) => {
++        if (e.key === 'Enter' && !e.shiftKey) {
++            e.preventDefault();
++            if (!message) return;
++
++            const newMessage = { id, userId, message };
++            // mutation.mutate(newMessage);
++
++            socket.emit('sendMessage', { senderId: userId, receiverId: id, message });
++
++            setMessage("");
++        }
++    };
++
++    return (
++        <div className=''>
++            <Header />
++            {tutor && (
++                <div className='text-white grid grid-cols-1 min-[780px]:grid-cols-2 gap-6 p-4 border '>
++                    <div>
++                        <div className='flex gap-10'>
++                            <div className='border-2 rounded-md w-full max-[780px]:flex border-cyan-950 '>
++                                <div className='flex min-[780px]:justify-center max-[400px]:items-center p-3'>
++                                    <img className='h-[300px] w-[300px] max-[780px]:h-[200px] max-[780px]:w-[200px] max-[588px]:h-[100px] max-[588px]:w-[100px] max-[363px]:rounded-none object-cover rounded-full ' src={tutor.image}></img>
++                                </div>
++                                <div className='flex flex-col p-5 text-xl max-[400px]:text-base gap-10 max-[580px]:gap-2 flex-auto text-white'>
++                                    <h2 className='text-5xl text-cyan-600 max-[580px]:text-3xl max-[400px]:text-xl font-bold flex min-[780px]:justify-center'>
++                                        {tutor.fullName}
++                                    </h2>
++                                    <div className='flex flex-col gap-1 text-white'>
++                                        <div className='flex items-center gap-2'>
++                                            <FaGraduationCap />
++                                            {tutor.language}
++                                        </div>
++                                        <div className='text-white flex items-center gap-2 max-[580px]:hidden'>
++                                            <IoLanguage />
++                                            Speaks {tutor.language} (Native)
++                                        </div>
++                                        <div className='text-white flex items-center gap-2'>
++                                            <GiDuration />
++                                            Duration - {tutor.courseDuration} Weeks
++                                        </div>
++                                    </div>
++                                    <h1 className='text-3xl font-bold text-cyan-500 mt-3 max-[780px]:hidden'>
++                                        About {tutor.fullName}
++                                    </h1>
++                                    <div className='max-[780px]:hidden'>
++                                        {tutor.description}
++                                    </div>
++                                </div>
++                            </div>
++                        </div>
++                        <Link className='flex mt-5 justify-center py-2 font-bold px-5 m-1 rounded-lg text-2xl items-center bg-cyan-950 hover:bg-cyan-800 text-white border'>
++                            Join Here
++                        </Link>
++                    </div>
++                    <form onSubmit={handleSubmit} className='border border-orange-200 flex flex-col p-3'>
++                        <div className='border border-blue-400 text-white p-4 text-3xl'>
++                            Chat with <span className='font-bold'>your tutor</span>
++                        </div>
++                        <div className='border flex-grow border-pink-600 text-white h-96 overflow-y-scroll p-4'>
++                            <Messages tutorId={id} userId={userId} />
++                        </div>
++                        <div className='border text-white bottom-0 border-green-700 p-4'>
++                            <div className='flex justify-between gap-2'>
++                                <textarea
++                                    type='text'
++                                    className='border text-sm rounded-lg flex-grow p-2.5 bg-gray-700 border-gray-600 text-white resize-none'
++                                    placeholder='Send a message'
++                                    value={message}
++                                    rows={1}
++                                    onChange={(e) => { setMessage(e.target.value) }}
++                                    onKeyDown={handleKeyPress}
++                                />
++                                <button type='submit' className='bg-cyan-950 rounded-lg p-3 flex items-center'>
++                                    <BsSend />
++                                </button>
++                            </div>
++                        </div>
++                    </form>
++                </div>
++            )}
++        </div>
++    );
++}
++
++export default Learning;
++
++
++
++
++
+diff --git a/frontend/tailwind.config.js b/frontend/tailwind.config.js
+index f8e8876..98b4d6c 100644
+--- a/frontend/tailwind.config.js
++++ b/frontend/tailwind.config.js
+@@ -8,6 +8,6 @@ export default {
+       },
+     },
+   },
+-  plugins: [],
++  plugins: [require("daisyui")],
+ }
+ 
+-- 
+2.41.0.windows.3
+

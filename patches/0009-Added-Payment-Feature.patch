@@ -1,0 +1,960 @@
+From 4056a740a2429b554188db97813b2f7aaf5a9cb1 Mon Sep 17 00:00:00 2001
+From: Deepak Arora <arroadeepak0817@gmail.com>
+Date: Thu, 23 May 2024 17:38:39 +0530
+Subject: [PATCH 09/16] Added Payment Feature
+
+---
+ backend/package-lock.json           |  15 ++-
+ backend/package.json                |   5 +-
+ backend/src/Routes/authRoutes.js    |  21 ++++
+ backend/src/Routes/tutorRoutes.js   | 112 ++++++++++++++++-
+ backend/src/models/tutor.js         |   7 ++
+ frontend/package-lock.json          |  91 ++++++++++++++
+ frontend/package.json               |   4 +
+ frontend/src/App.jsx                |   9 ++
+ frontend/src/apiClient.js           |  43 +++++++
+ frontend/src/context/AppContext.jsx |  23 ++++
+ frontend/src/main.jsx               |   3 +
+ frontend/src/pages/Booking.jsx      | 188 ++++++++++++++++++++++++++++
+ frontend/src/pages/BookingForm.jsx  | 129 +++++++++++++++++++
+ frontend/src/pages/Details.jsx      |  12 +-
+ 14 files changed, 654 insertions(+), 8 deletions(-)
+ create mode 100644 frontend/src/context/AppContext.jsx
+ create mode 100644 frontend/src/pages/Booking.jsx
+ create mode 100644 frontend/src/pages/BookingForm.jsx
+
+diff --git a/backend/package-lock.json b/backend/package-lock.json
+index 61854da..a3f024e 100644
+--- a/backend/package-lock.json
++++ b/backend/package-lock.json
+@@ -16,7 +16,8 @@
+         "firebase": "^10.11.0",
+         "mongodb": "^6.5.0",
+         "mongoose": "^8.3.2",
+-        "multer": "^1.4.5-lts.1"
++        "multer": "^1.4.5-lts.1",
++        "stripe": "^15.7.0"
+       }
+     },
+     "node_modules/@fastify/busboy": {
+@@ -1802,6 +1803,18 @@
+         "node": ">=8"
+       }
+     },
++    "node_modules/stripe": {
++      "version": "15.7.0",
++      "resolved": "https://registry.npmjs.org/stripe/-/stripe-15.7.0.tgz",
++      "integrity": "sha512-hTJhh0Gc+l+hj2vuzaFCh0T46l7793W3wg4J9Oyy3Wu+Ofswd0OgTS4XNt7G9XHJAyHpTmNRNbWgGwn73P4j7g==",
++      "dependencies": {
++        "@types/node": ">=8.1.0",
++        "qs": "^6.11.0"
++      },
++      "engines": {
++        "node": ">=12.*"
++      }
++    },
+     "node_modules/toidentifier": {
+       "version": "1.0.1",
+       "resolved": "https://registry.npmjs.org/toidentifier/-/toidentifier-1.0.1.tgz",
+diff --git a/backend/package.json b/backend/package.json
+index 35b7929..a3f04e3 100644
+--- a/backend/package.json
++++ b/backend/package.json
+@@ -6,7 +6,7 @@
+   "type": "module",
+   "scripts": {
+     "test": "",
+-    "build":"npm install",
++    "build": "npm install",
+     "start": " node src/index.js"
+   },
+   "author": "",
+@@ -19,6 +19,7 @@
+     "firebase": "^10.11.0",
+     "mongodb": "^6.5.0",
+     "mongoose": "^8.3.2",
+-    "multer": "^1.4.5-lts.1"
++    "multer": "^1.4.5-lts.1",
++    "stripe": "^15.7.0"
+   }
+ }
+diff --git a/backend/src/Routes/authRoutes.js b/backend/src/Routes/authRoutes.js
+index 0135d1f..500ba16 100644
+--- a/backend/src/Routes/authRoutes.js
++++ b/backend/src/Routes/authRoutes.js
+@@ -28,4 +28,25 @@ router.post("/", async(req,res)=>{
+     
+ })
+ 
++router.get("/current-user/:auth0Id", async(req, res)=>{
++    try{
++        const auth0Id = req.params.auth0Id
++        const currentUser = await User.findOne({auth0Id})
++
++        if(!currentUser)
++            {
++                return res.status(400).json({message : "User not found"})
++            }
++           
++
++        res.status(201).json(currentUser)
++    }
++    catch(error){
++        console.log(error)
++        res.status(500).json({message : "Something went wrong in fetching current user"})
++    }
++   
++
++})
++
+ export default router
+\ No newline at end of file
+diff --git a/backend/src/Routes/tutorRoutes.js b/backend/src/Routes/tutorRoutes.js
+index 11a61ac..aa13b1e 100644
+--- a/backend/src/Routes/tutorRoutes.js
++++ b/backend/src/Routes/tutorRoutes.js
+@@ -2,6 +2,11 @@ import express from "express"
+ import Tutor from "../models/tutor.js"
+ import multer from "multer"
+ import cloudinary from "cloudinary";
++import Stripe from "stripe"
++
++const stripeKey = "sk_test_51P24TZSCGEvzC7HSiD39Aq7rEDsK6UAg1d5ER9dLNFY6QF0NnaB6ovPW7A0Ru1B0NWoLQVLqS5xr3MFBmPtCAqk000QWiADZNa" 
++
++const stripe = new Stripe(stripeKey)
+ 
+ const router = express.Router()
+ 
+@@ -19,9 +24,11 @@ router.post("/",upload.single("imageFile"), async(req, res)=>{
+         // console.log(req)
+         console.log(req.body)
+         console.log(req.file)
++        const bookingArray= []
+         const data = req.body
+         // console.log(imageFile)
+         const tutor = new Tutor(data)
++        tutor.bookings = bookingArray
+         await tutor.save()
+         res.status(200).send(tutor)
+ 
+@@ -57,7 +64,7 @@ router.get("/tutorsBasedOnSearch", async(req, res)=>{
+ router.get("/:id", async(req, res) => {
+     try {
+         const id = req.params.id.toString();
+-        const tutor = await Tutor.findById(id); // Wait for the query to execute and convert to plain JavaScript object
++        const tutor = await Tutor.findById(id); 
+         res.send(tutor);
+     } catch(error) {
+         console.log(error);
+@@ -78,9 +85,112 @@ router.post("/otherTutors", async(req, res)=>{
+     }
+ })
+ 
++router.post("/payment-intent", async(req, res)=>{
++    try{
++        const {tutorId, userId} = req.body
++
++        const tutor = await Tutor.findById(tutorId)
++    
++        if(!tutor)
++            return res.status(400).json({message: "Tutor not found"})
++
++        const paymentIntent = await stripe.paymentIntents.create({
++            amount : tutor.cost,
++            currency :"inr",
++            metadata:{
++                tutorId,
++                userId
++            }
++        })
++
++        if(!paymentIntent.client_secret)
++            {
++                return res.status(500).json({ message: "Error creating payment intent" });
++
++            }
++        const response = {
++            paymentIntentId : paymentIntent.id, 
++            clientSecret : paymentIntent.client_secret.toString(),
++
++        }
++        res.status(201).json(response)
++    
++    }
++    catch(error){
++        console.log(error)
++        res.status(500).json({message : "Something went wrong in creating payment intent"})
++    }
++   
++
++})
++
++router.post("/createBooking", async(req, res)=>{
++    try{
++
++        const {formData} = req.body
++        const { name, email,paymentIntentId,   tutorId,userId,} = formData
++        
++
++        const paymentIntent = await stripe.paymentIntents.retrieve(
++            paymentIntentId 
++          );
++        
++          if (!paymentIntent) {
++            return res.status(400).json({ message: "payment intent not found" });
++          }
++
++          if (
++            paymentIntent.metadata.tutorId !== tutorId ||
++            paymentIntent.metadata.userId !== userId
++          ) {
++            return res.status(400).json({ message: "payment intent mismatch" });
++          }
++    
++          if (paymentIntent.status !== "succeeded") {
++            return res.status(400).json({
++              message: `payment intent not succeeded. Status: ${paymentIntent.status}`,
++            });
++          }
++
++          const newBooking ={
++            userId,
++            name, 
++            email
++          }
++
++          const tutor = await Tutor.findOneAndUpdate(
++            { _id: tutorId },
++            {
++              $push: { bookings: newBooking },
++            }
++          );
++
++          if (!tutor) {
++            return res.status(400).json({ message: "tutor not found" });
++          }
++
++
++          await tutor.save();
++          res.status(200).json(tutor);
++
++
++
++    }
++    catch(error){
++        console.log(error)
++        res.status(400).json({"message" : "Something went wrong"})
++    }
++})
++    
++   
++
++
+ 
+ export default router
+ 
++
++
++
+ const constructSearchQuery = (queryParams)=>{
+ 
+     let constructedQuery = {}
+diff --git a/backend/src/models/tutor.js b/backend/src/models/tutor.js
+index b0a6773..e155fe4 100644
+--- a/backend/src/models/tutor.js
++++ b/backend/src/models/tutor.js
+@@ -1,5 +1,11 @@
+ import mongoose from "mongoose";
+ 
++const bookingSchema = new mongoose.Schema({
++    userId:{type:String,unique : true , required: true},
++    email:{type:String, required:true},
++    name:{type:String },
++})
++
+ const tutorSchema = new mongoose.Schema({
+     fullName:{type:String },
+     email:{type:String, required:true},
+@@ -9,6 +15,7 @@ const tutorSchema = new mongoose.Schema({
+     cost : {type : Number},
+     description : {type : String},
+     image:{type:String},
++    bookings : [bookingSchema]
+    
+ 
+ })
+diff --git a/frontend/package-lock.json b/frontend/package-lock.json
+index 494df9b..1ed8b5f 100644
+--- a/frontend/package-lock.json
++++ b/frontend/package-lock.json
+@@ -13,9 +13,12 @@
+         "@emotion/styled": "^11.11.5",
+         "@mui/material": "^5.15.15",
+         "@mui/styled-engine": "^5.15.14",
++        "@stripe/react-stripe-js": "^2.7.1",
++        "@stripe/stripe-js": "^3.4.0",
+         "autoprefixer": "^10.4.19",
+         "axios": "^1.6.8",
+         "cloudinary": "^2.2.0",
++        "date-fns": "^3.6.0",
+         "firebase": "^10.11.0",
+         "framer-motion": "^11.0.28",
+         "lottie-react": "^2.4.0",
+@@ -29,6 +32,7 @@
+         "react-query": "^3.39.3",
+         "react-router-dom": "^6.22.3",
+         "react-select": "^5.8.0",
++        "react-stripe-js": "^1.1.5",
+         "react-type-animation": "^3.2.0",
+         "typewriter-effect": "^2.21.0"
+       },
+@@ -2239,6 +2243,27 @@
+         "win32"
+       ]
+     },
++    "node_modules/@stripe/react-stripe-js": {
++      "version": "2.7.1",
++      "resolved": "https://registry.npmjs.org/@stripe/react-stripe-js/-/react-stripe-js-2.7.1.tgz",
++      "integrity": "sha512-/i13alp27HaSBbMM6kW0jhy8KqdtOL1T/EcRjFjfhvt+CBtMEg8TD7y28W3oZG0+OBDdCyGGnXgNgrKPYQH40g==",
++      "dependencies": {
++        "prop-types": "^15.7.2"
++      },
++      "peerDependencies": {
++        "@stripe/stripe-js": "^1.44.1 || ^2.0.0 || ^3.0.0",
++        "react": "^16.8.0 || ^17.0.0 || ^18.0.0",
++        "react-dom": "^16.8.0 || ^17.0.0 || ^18.0.0"
++      }
++    },
++    "node_modules/@stripe/stripe-js": {
++      "version": "3.4.0",
++      "resolved": "https://registry.npmjs.org/@stripe/stripe-js/-/stripe-js-3.4.0.tgz",
++      "integrity": "sha512-a2kUP7OrsV0SSIk3UxWa+cnrW+PPIyuCbWIBH8vxfHIqmyeQN/d0lsplZJ2h7MlLsU/sB3EyhNBkhLLT+zHwKw==",
++      "engines": {
++        "node": ">=12.16"
++      }
++    },
+     "node_modules/@types/babel__core": {
+       "version": "7.20.5",
+       "resolved": "https://registry.npmjs.org/@types/babel__core/-/babel__core-7.20.5.tgz",
+@@ -3124,6 +3149,15 @@
+         "url": "https://github.com/sponsors/ljharb"
+       }
+     },
++    "node_modules/date-fns": {
++      "version": "3.6.0",
++      "resolved": "https://registry.npmjs.org/date-fns/-/date-fns-3.6.0.tgz",
++      "integrity": "sha512-fRHTG8g/Gif+kSh50gaGEdToemgfj74aRX3swtiouboip5JDLAyDE9F11nHMIcvOaXeOC6D7SpNhi7uFyB7Uww==",
++      "funding": {
++        "type": "github",
++        "url": "https://github.com/sponsors/kossnocorp"
++      }
++    },
+     "node_modules/debug": {
+       "version": "4.3.4",
+       "resolved": "https://registry.npmjs.org/debug/-/debug-4.3.4.tgz",
+@@ -5901,6 +5935,63 @@
+         "react-dom": "^16.8.0 || ^17.0.0 || ^18.0.0"
+       }
+     },
++    "node_modules/react-stripe-js": {
++      "version": "1.1.5",
++      "resolved": "https://registry.npmjs.org/react-stripe-js/-/react-stripe-js-1.1.5.tgz",
++      "integrity": "sha512-4lIucgf/FZj6Uxvf/TH+QQa/Qi3FXigwN/QY6H7naPyoEfw9LOuTzdgPAmm7aeSXj8nZJXVoigiGzzFZchXjew==",
++      "dependencies": {
++        "@stripe/react-stripe-js": "1.7.2",
++        "@stripe/stripe-js": "1.29.0"
++      },
++      "engines": {
++        "node": ">=10"
++      },
++      "peerDependencies": {
++        "react": ">=16"
++      }
++    },
++    "node_modules/react-stripe-js/node_modules/@stripe/react-stripe-js": {
++      "version": "1.7.2",
++      "resolved": "https://registry.npmjs.org/@stripe/react-stripe-js/-/react-stripe-js-1.7.2.tgz",
++      "integrity": "sha512-IAVg2nPUPoSwI//XDRCO7D8mGeK4+N3Xg63fYZHmlfEWAuFVcuaqJKTT67uzIdKYZhHZ/NMdZw/ttz+GOjP/rQ==",
++      "dependencies": {
++        "prop-types": "^15.7.2"
++      },
++      "peerDependencies": {
++        "@stripe/stripe-js": "^1.26.0",
++        "react": "^16.8.0 || ^17.0.0",
++        "react-dom": "^16.8.0 || ^17.0.0"
++      }
++    },
++    "node_modules/react-stripe-js/node_modules/@stripe/stripe-js": {
++      "version": "1.29.0",
++      "resolved": "https://registry.npmjs.org/@stripe/stripe-js/-/stripe-js-1.29.0.tgz",
++      "integrity": "sha512-OsUxk0VLlum8E2d6onlEdKuQcvLMs7qTrOXCnl/BGV3fAm65qr6h3e1IZ5AX4lgUlPRrzRcddSOA5DvkKKYLvg=="
++    },
++    "node_modules/react-stripe-js/node_modules/react-dom": {
++      "version": "17.0.2",
++      "resolved": "https://registry.npmjs.org/react-dom/-/react-dom-17.0.2.tgz",
++      "integrity": "sha512-s4h96KtLDUQlsENhMn1ar8t2bEa+q/YAtj8pPPdIjPDGBDIVNsrD9aXNWqspUe6AzKCIG0C1HZZLqLV7qpOBGA==",
++      "peer": true,
++      "dependencies": {
++        "loose-envify": "^1.1.0",
++        "object-assign": "^4.1.1",
++        "scheduler": "^0.20.2"
++      },
++      "peerDependencies": {
++        "react": "17.0.2"
++      }
++    },
++    "node_modules/react-stripe-js/node_modules/scheduler": {
++      "version": "0.20.2",
++      "resolved": "https://registry.npmjs.org/scheduler/-/scheduler-0.20.2.tgz",
++      "integrity": "sha512-2eWfGgAqqWFGqtdMmcL5zCMK1U8KlXv8SQFGglL3CEtd0aDVDWgeF/YoCmvln55m5zSk3J/20hTaSBeSObsQDQ==",
++      "peer": true,
++      "dependencies": {
++        "loose-envify": "^1.1.0",
++        "object-assign": "^4.1.1"
++      }
++    },
+     "node_modules/react-transition-group": {
+       "version": "4.4.5",
+       "resolved": "https://registry.npmjs.org/react-transition-group/-/react-transition-group-4.4.5.tgz",
+diff --git a/frontend/package.json b/frontend/package.json
+index ec118de..fa4224a 100644
+--- a/frontend/package.json
++++ b/frontend/package.json
+@@ -15,9 +15,12 @@
+     "@emotion/styled": "^11.11.5",
+     "@mui/material": "^5.15.15",
+     "@mui/styled-engine": "^5.15.14",
++    "@stripe/react-stripe-js": "^2.7.1",
++    "@stripe/stripe-js": "^3.4.0",
+     "autoprefixer": "^10.4.19",
+     "axios": "^1.6.8",
+     "cloudinary": "^2.2.0",
++    "date-fns": "^3.6.0",
+     "firebase": "^10.11.0",
+     "framer-motion": "^11.0.28",
+     "lottie-react": "^2.4.0",
+@@ -31,6 +34,7 @@
+     "react-query": "^3.39.3",
+     "react-router-dom": "^6.22.3",
+     "react-select": "^5.8.0",
++    "react-stripe-js": "^1.1.5",
+     "react-type-animation": "^3.2.0",
+     "typewriter-effect": "^2.21.0"
+   },
+diff --git a/frontend/src/App.jsx b/frontend/src/App.jsx
+index a3b616f..fd9e021 100644
+--- a/frontend/src/App.jsx
++++ b/frontend/src/App.jsx
+@@ -11,12 +11,16 @@ import NavbarMenu from './components/NavbarMenu'
+ import AddTutor from "./pages/AddTutor"
+ import Search from './pages/Search'
+ import Details from './pages/Details'
++import Booking from './pages/Booking'
++import { Elements } from '@stripe/react-stripe-js'
++import { useAppContext } from './context/AppContext'
+ 
+ 
+ function App() {
+   const { user, isAuthenticated, isLoading } = useAuth0();
+   if(user)
+   console.log(user.sub)
++  const {stripePromise} = useAppContext()
+   return (
+     <Router >
+       <Routes>
+@@ -25,6 +29,11 @@ function App() {
+        <Route path='/AddTutor' element= {<AddTutor />} />
+        <Route path='/search' element= {<Search />} />
+        <Route path='/details/:id' element= {<Details />} />
++       <Route path='/booking/:id' element= {
++       
++       <Booking />
++     
++       } />
+        <Route path='/home' element={!isAuthenticated ? <Welcome /> : <Home />} />
+      
+       </Routes>
+diff --git a/frontend/src/apiClient.js b/frontend/src/apiClient.js
+index 749f442..7a9964f 100644
+--- a/frontend/src/apiClient.js
++++ b/frontend/src/apiClient.js
+@@ -88,3 +88,46 @@ export const auth = async (user) => {
+ 
+     return response.json()
+   }
++
++  export const fetchCurrentUser = async(auth0Id)=>{
++    const response  = await fetch(`/api/auth/current-user/${auth0Id}`)
++
++    if(!response.ok)
++      throw new Error("Error fetching current user")
++
++    return response.json()
++
++  }
++
++  export const  createPaymentIntent = async(tutorId, userId)=>{
++    const response = await fetch(`/api/tutor/payment-intent`, {
++      method:"POST",
++      headers:{
++        "Content-Type" : "application/json"
++      },
++      body: JSON.stringify({tutorId, userId})
++    })
++    if(!response.ok)
++      throw new Error("Error creating payment-intent")
++
++    return response.json()
++
++  }
++
++  export const createTutorBooking = async(formData)=>{
++  
++    const response = await fetch(`/api/tutor/createBooking`, {
++      method:"POST", 
++      headers:{
++        "Content-Type" : "application/json"
++      },
++      body: JSON.stringify({formData})
++    })
++
++    if(!response.ok)
++      throw new Error("Error creating tutor booking")
++
++
++    return response.json()
++
++  }
+diff --git a/frontend/src/context/AppContext.jsx b/frontend/src/context/AppContext.jsx
+new file mode 100644
+index 0000000..6c52bf5
+--- /dev/null
++++ b/frontend/src/context/AppContext.jsx
+@@ -0,0 +1,23 @@
++import  React, {useContext, useState} from "react"
++import {loadStripe} from "@stripe/stripe-js"
++
++const STRIPE_KEY = "pk_test_51P24TZSCGEvzC7HS0ILDrhpbicJz5kcbkJbbL9JO1t3WiQ57I3RwgoBrMHXYGZTZ9NnPNNYCBbAu6Xcf73DVtJfL00ed6c9l7w"
++
++const AppContext = React.createContext(undefined)
++const stripePromise = loadStripe(STRIPE_KEY)
++
++export const AppContextProvider = ({children})=>{
++       return (
++        <AppContext.Provider value={{
++            stripePromise
++        }}>
++        {children}
++
++        </AppContext.Provider>
++       )
++
++}
++export const useAppContext = ()=>{
++    const context = useContext(AppContext)
++    return context
++}
+\ No newline at end of file
+diff --git a/frontend/src/main.jsx b/frontend/src/main.jsx
+index 06c1011..f0f1d68 100644
+--- a/frontend/src/main.jsx
++++ b/frontend/src/main.jsx
+@@ -7,6 +7,7 @@ import { QueryClient, QueryClientProvider } from "react-query";
+ import * as apiClient from "./apiClient.js";
+ import { useMutation, useQueryClient } from "react-query";
+ import { SearchContextProvider } from "./context/SearchContext.jsx";
++import { AppContextProvider } from "./context/AppContext.jsx";
+ 
+ const queryClient = new QueryClient({
+   defaultOptions: {
+@@ -18,6 +19,7 @@ const queryClient = new QueryClient({
+ 
+ ReactDOM.createRoot(document.getElementById("root")).render(
+   <QueryClientProvider client={queryClient}>
++  <AppContextProvider>
+     <SearchContextProvider>
+       <Auth0Provider
+         domain="dev-rzg0uho30sdg4ypr.us.auth0.com"
+@@ -29,5 +31,6 @@ ReactDOM.createRoot(document.getElementById("root")).render(
+         <App />
+       </Auth0Provider>
+     </SearchContextProvider>
++    </AppContextProvider>
+   </QueryClientProvider>
+ );
+diff --git a/frontend/src/pages/Booking.jsx b/frontend/src/pages/Booking.jsx
+new file mode 100644
+index 0000000..3243e86
+--- /dev/null
++++ b/frontend/src/pages/Booking.jsx
+@@ -0,0 +1,188 @@
++import React ,{useState,useEffect} from 'react'
++import * as apiClient from "../apiClient.js"
++import { useNavigate, useParams } from 'react-router-dom'
++import { useMutation, useQuery } from 'react-query'
++import Header from '../components/Header.jsx'
++import { MdOutlineVerifiedUser } from "react-icons/md";
++import { FaIndianRupeeSign } from "react-icons/fa6";
++import { format, addDays } from 'date-fns';
++import { FaRegQuestionCircle } from "react-icons/fa";
++import { MdVerified } from "react-icons/md";
++import { FcGoogle } from "react-icons/fc";
++import { CardElement, useElements, useStripe } from '@stripe/react-stripe-js'
++import { Elements } from "@stripe/react-stripe-js";
++import { useAppContext } from '../context/AppContext.jsx'
++import { useAuth0 } from '@auth0/auth0-react'
++import {useForm} from "react-hook-form"
++import BookingForm from './BookingForm.jsx'
++
++const Booking = () => {
++
++
++    const [isSubmitting , setIsSubmitting] = useState(false)
++
++    const {id} = useParams()
++    const {stripePromise} = useAppContext()
++
++    const {data : tutor} = useQuery(["fetchTutorById", id], ()=> apiClient.fetchTutorById(id),{enabled:!!id})
++
++    const {user} = useAuth0()
++    const {data :currentUser} = useQuery(["fetchCurrentUser", user?.sub], ()=> apiClient.fetchCurrentUser(user.sub),{
++      enabled:!!user
++    })
++    
++
++    const userId = currentUser?._id
++    const {data : paymentIntentData} = useQuery(["createPaymentIntent", id,userId ], ()=>apiClient.createPaymentIntent(id, userId), {
++      enabled:!!id && !!userId
++
++    })
++
++
++    const getTomorrowFormattedDate = () => {
++        const tomorrow = addDays(new Date(), 1);
++        const day = format(tomorrow, 'EEEE');
++        const date = format(tomorrow, 'do');
++        const month = format(tomorrow, 'MMMM');
++      
++        return `${day} ${date} ${month}`;
++      };
++
++      const cardElementOptions = {
++        style: {
++            base: {
++                color: '#ffffff',
++                fontSize: '16px',
++                '::placeholder': {
++                    color: '#aab7c4',
++                },
++                backgroundColor: '#000000', 
++            },
++            invalid: {
++                color: '#fa755a',
++                iconColor: '#fa755a',
++            },
++        },
++    };
++
++  return (
++   
++        <div className='text-white'>
++    <Header />
++    {tutor && (
++        <div className='flex items-center justify-center  mt-12'>
++    <div className='grid grid-cols-1 lg:grid-cols-2 border border-cyan-950 gap-7 p-4'>
++    <div className='flex flex-col p-6 border border-cyan-950 gap-7 '>
++
++    <div className='flex flex-col border-b-2  gap-5 border-slate-600 '>
++    <div className='flex   gap-4'>
++      <img src={tutor.image} alt='tutor-image'
++        className='h-28 rounded-md'
++      />
++      <div className='flex flex-col gap-1'>
++        <div className='text-white'>
++          {tutor.language}
++        </div>
++        <div className='text-white font-extrabold text-3xl'>
++          {tutor.fullName}
++        </div>
++        <div className='text-white'>
++            {tutor.name}
++        </div>
++        <div className='flex items-center gap-1 '>
++        <MdOutlineVerifiedUser /> Verified
++        </div>
++      </div>
++    </div>
++
++    <div className='flex  items-center justify-center p-5 text-xl gap-5 '>
++    <span className='text-white'>
++        {tutor.courseDuration} Weeks
++    </span>
++
++    <span className='text-white flex items-center'>
++    <FaIndianRupeeSign /> {tutor.cost}
++    </span>
++
++    </div>
++    </div>
++
++
++    <div className='flex flex-col pb-10 px-2 gap-1  text-white border-b-2 border-slate-600'>
++    <p className='font-bold text-2xl'> First Lesson- {getTomorrowFormattedDate()}</p>
++    <p className=''>
++      Time is based on your location  
++    </p>
++    </div>
++
++    <div className='flex pb-10 px-2 flex-col border-b-2 text-xl gap-4 border-slate-600'>
++        <div className='font-bold text-3xl'>
++            Your Order
++        </div>
++        <div className='flex justify-between items-center'>
++            <span>
++            {tutor.courseDuration} weeks course
++            </span>
++            <span className='text-white flex items-center'>
++             <FaIndianRupeeSign /> {tutor.cost}
++            </span>
++        </div>
++        <div className='flex justify-between items-center'>
++        <span className='text-white flex items-center gap-2'>
++           Processing fee <FaRegQuestionCircle className='mt-1' />
++            </span>
++            <span className='text-white flex items-center'>
++             <FaIndianRupeeSign  /> 49.99
++            </span>
++        </div>
++        <div className='flex justify-between items-center'>
++        <span className='text-white flex items-center font-bold text-2xl '>
++        Total
++        </span>
++            <span className='text-white flex items-center'>
++             <FaIndianRupeeSign  /> {tutor.cost + 49.99}
++            </span>
++        </div>
++    </div>
++
++    <div className='  flex flex-col bg-cyan-950 text-white p-3  rounded-md '>
++    <div className='flex items-center gap-2 '>
++    <MdVerified />
++    <p>
++        Free replacement or refund
++    </p>
++    </div>
++    <div className='ml-6'>
++    Try another tutor for free or get a <br /> refund
++    </div>
++    </div>
++    </div>
++
++    {currentUser && paymentIntentData && (
++        
++        <Elements
++          stripe={stripePromise}
++          options={{
++            clientSecret: paymentIntentData.clientSecret,
++          }}
++        >
++          <BookingForm
++            currentUser={currentUser}
++            paymentIntentData={paymentIntentData}
++            tutorId = {id}
++          />
++        </Elements>
++      )}
++    
++
++    </div>
++    </div>
++    )}
++    </div>
++
++    
++    
++  )
++}
++
++export default Booking
+diff --git a/frontend/src/pages/BookingForm.jsx b/frontend/src/pages/BookingForm.jsx
+new file mode 100644
+index 0000000..1d00f5d
+--- /dev/null
++++ b/frontend/src/pages/BookingForm.jsx
+@@ -0,0 +1,129 @@
++import React ,{useState,useEffect} from 'react'
++import * as apiClient from "../apiClient.js"
++import { useNavigate, useParams } from 'react-router-dom'
++import { useMutation, useQuery } from 'react-query'
++import Header from '../components/Header.jsx'
++import { MdOutlineVerifiedUser } from "react-icons/md";
++import { FaIndianRupeeSign } from "react-icons/fa6";
++import { format, addDays } from 'date-fns';
++import { FaRegQuestionCircle } from "react-icons/fa";
++import { MdVerified } from "react-icons/md";
++import { FcGoogle } from "react-icons/fc";
++import { CardElement, useElements, useStripe } from '@stripe/react-stripe-js'
++import { Elements } from "@stripe/react-stripe-js";
++import { useAppContext } from '../context/AppContext.jsx'
++import { useAuth0 } from '@auth0/auth0-react'
++import {useForm} from "react-hook-form"
++
++
++const BookingForm = ({currentUser, paymentIntentData, tutorId}) => {
++    const [isSubmitting , setIsSubmitting] = useState(false)
++
++   
++    const {stripePromise} = useAppContext()
++
++    const stripe = useStripe()
++    const elements = useElements()
++
++    const userId = currentUser?._id
++ 
++  
++
++    const { handleSubmit, register, setValue, formState: { errors } } = useForm()
++
++    useEffect(() => {
++        if (currentUser) {
++            setValue('name', currentUser.name)
++            setValue('email', currentUser.email)
++        }
++    }, [currentUser, setValue])
++
++    const {mutate : bookTutor, isLoading} = useMutation(apiClient.createTutorBooking, {
++      onSuccess:()=>{
++        console.log("success")
++      },
++      onError:(error)=>{
++        console.log(error)
++      
++      }
++
++    })
++
++
++
++    const onSubmit = async(formData)=>{
++        
++      if (!stripe || !elements  || isSubmitting) {
++        return;
++      }
++      
++      setIsSubmitting(true)
++
++      const result = await stripe.confirmCardPayment(paymentIntentData?.clientSecret, {
++        payment_method:{
++          card:elements.getElement(CardElement)
++        }
++
++      })
++      
++
++      if(result.paymentIntent?.status === 'succeeded') {
++        bookTutor({...formData,  paymentIntentId : paymentIntentData?.paymentIntentId, tutorId : tutorId, userId:currentUser?._id})
++      }
++
++      setIsSubmitting(false)
++
++
++    }
++      const cardElementOptions = {
++        style: {
++            base: {
++                color: '#ffffff',
++                fontSize: '16px',
++                '::placeholder': {
++                    color: '#aab7c4',
++                },
++                backgroundColor: '#000000', 
++            },
++            invalid: {
++                color: '#fa755a',
++                iconColor: '#fa755a',
++            },
++        },
++    };
++  return (
++    <div className='flex  border border-cyan-950 justify-center'>
++        <div className=' rounded-lg justify-center flex flex-col gap-3 py-7 px-20 max-[1174px]:px-10 max-[524px]:px-5 '>
++        <div className='text-white text-4xl  min-[468px]:text-6xl p-3 max-[524px]:p-2 mb-6 font-bold'>
++            Enter Details
++        </div>
++        <form onSubmit={handleSubmit(onSubmit)} className='flex flex-col gap-5'>
++
++        <input className='bg-black  p-2 min-[486px]:w-[400px]    text-xl border-2 text-white  rounded-lg border-cyan-950' placeholder='Enter name' type='text' name='name' {...register("name",{ required : "This is a required field"})} />
++        {errors.name && (
++          <span className='text-red-700 text-sm'>{errors.name.message}</span>
++        )}
++
++        <input className='bg-black p-2 text-xl min-[486px]:w-[400px]   border-2 text-white  rounded-lg border-cyan-950' placeholder='Enter email' type='email' name='email' {...register("email",{ required : "This is a required field"})} />
++        {
++          errors.email && (
++        <span className='text-red-700 text-sm'>{errors.email.message}</span>
++
++          )
++        }
++        <CardElement
++        id="payment-element"
++        options={cardElementOptions}
++        className='border-2 p-4 min-[476px]:w-[400px]  text-xl text-white rounded-lg border-cyan-950'
++         />
++        <button type='submit' className='hover:bg-black mt-4 bg-cyan-950 text-white font-bold text-xl p-3 border rounded-lg ' >{ isLoading ? "Saving..." : "Confirm Booking"}</button>
++        </form>
++
++
++        </div>
++    </div>
++  )
++}
++
++export default BookingForm
++
+diff --git a/frontend/src/pages/Details.jsx b/frontend/src/pages/Details.jsx
+index b2a8f37..78b4a4f 100644
+--- a/frontend/src/pages/Details.jsx
++++ b/frontend/src/pages/Details.jsx
+@@ -1,6 +1,6 @@
+ import React from 'react'
+ import Header from "../components/Header"
+-import { useParams } from 'react-router-dom'
++import { useNavigate, useParams } from 'react-router-dom'
+ import { useQuery } from 'react-query'
+ import * as apiClient from "../apiClient.js"
+ import { IoLanguage } from "react-icons/io5";
+@@ -9,16 +9,16 @@ import { FaGraduationCap } from "react-icons/fa";
+ import TutorCard2  from "../components/TutorCard2.jsx"
+ const Details = () => {
+     const {id} = useParams()
++    const navigate = useNavigate()
+ 
+     const {data : tutor} = useQuery(["fetchTutorById", id], ()=> apiClient.fetchTutorById(id))
+ 
+        
+     const {data : otherTutors} = useQuery(["fetchOtherTutors", tutor?.language, tutor?._id], ()=> apiClient.fetchOtherTutors(tutor?.language, tutor?._id))
+ 
+-        
+-    
+     // console.log(tutor)
+     console.log(otherTutors)
++
+         
+   return (
+     <div className='flex flex-col' >
+@@ -59,7 +59,11 @@ const Details = () => {
+    <p className='text-2xl whitespace-normal break-words'>
+        {tutor.description}
+    </p>
+-   <button  className='border mt-10 rounded px-5 py-2 text-2xl tracking-wide   text-white  font bold bg-cyan-950 hover:bg-cyan-700 '> Book Now</button>
++
++   <button onClick={()=> navigate(`/booking/${tutor._id}`)}
++    className='border mt-10 rounded px-5 py-2 text-2xl tracking-wide   text-white  font bold bg-cyan-950 hover:bg-cyan-700 '>
++     Book Now
++     </button>
+ 
+ 
+    </div>
+-- 
+2.41.0.windows.3
+

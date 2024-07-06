@@ -1,0 +1,55 @@
+From 55cbaf3654be6f0516d60a0f2c8ff8326d323d74 Mon Sep 17 00:00:00 2001
+From: Deepak Arora <arroadeepak0817@gmail.com>
+Date: Tue, 18 Jun 2024 16:50:59 +0530
+Subject: [PATCH 15/16] removed conditional rendering of hooks
+
+---
+ frontend/src/pages/VideoCall.jsx | 16 ++++++++--------
+ 1 file changed, 8 insertions(+), 8 deletions(-)
+
+diff --git a/frontend/src/pages/VideoCall.jsx b/frontend/src/pages/VideoCall.jsx
+index 86be1be..14430c2 100644
+--- a/frontend/src/pages/VideoCall.jsx
++++ b/frontend/src/pages/VideoCall.jsx
+@@ -67,9 +67,9 @@ const VideoCall = () => {
+     console.log(`Current callId state: ${callId}`);
+   }, [callId]);
+ 
+-  if (isLoading || !token) {
+-    return <div>Loading...</div>;
+-  }
++  // if (isLoading || !token) {
++  //   return <div>Loading...</div>;
++  // }
+ 
+   const user = {
+     id: userId,
+@@ -106,14 +106,14 @@ const VideoCall = () => {
+ export default VideoCall;
+ 
+ export const MyUILayout = ({ navigate, tutorId, studentId }) => {
+-  const call = useCall();
++  // const call = useCall();
+   const { useCallCallingState } = useCallStateHooks();
+ 
+   const callingState = useCallCallingState();
+ 
+-  if (callingState !== CallingState.JOINED) {
+-    return <div>Loading...</div>;
+-  }
++  // if (callingState !== CallingState.JOINED) {
++  //   return <div>Loading...</div>;
++  // }
+ 
+   return (
+     <StreamTheme>
+@@ -149,4 +149,4 @@ export const MyFloatingLocalParticipant = ({ participant }) => {
+       <ParticipantView participant={participant} />
+     </div>
+   );
+-};
++};
+\ No newline at end of file
+-- 
+2.41.0.windows.3
+

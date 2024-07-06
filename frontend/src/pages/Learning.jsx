@@ -62,7 +62,7 @@ const Learning = () => {
   const [callId, setCallId] = useState("");
 
   useEffect(() => {
-    const newSocket = io("https://lingio-connect.onrender.com");
+    const newSocket = io("https://lingio-connect-l8k2.onrender.com");
     setSocket(newSocket);
     newSocket.on("receiveCallId", (callId) => {
       setCallId(callId);
