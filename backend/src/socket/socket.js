@@ -76,7 +76,7 @@ io.on('connection', (socket) => {
             // Store the callId in memory
             roomCallIds[roomId] = callId;
 
-            io.to(roomId).emit('receiveCallId', callId);
+            // io.to(roomId).emit('receiveCallId', callId);
         } catch (error) {
             console.error(error);
         }
