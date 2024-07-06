@@ -23,7 +23,8 @@ const VideoCall = () => {
   const { tutorId, studentId, studentName } = useParams();
 
   const [socket, setSocket] = useState(null);
-  const [callId, setCallId] = useState('');
+  // const [callId, setCallId] = useState('');
+  const callId = `LingioConnect_${tutorId}`
 
   const apiKey = '9nrade67axhx';
   const userId = studentId;
@@ -44,10 +45,10 @@ const VideoCall = () => {
       newSocket.emit('joinRoom', { senderId: studentId, receiverId: tutorId });
     });
 
-    newSocket.on('receiveCallId', (receivedCallId) => {
-      console.log(`Received callId: ${receivedCallId}`);
-      setCallId(receivedCallId);
-    });
+    // newSocket.on('receiveCallId', (receivedCallId) => {
+    //   console.log(`Received callId: ${receivedCallId}`);
+    //   setCallId(receivedCallId);
+    // });
 
     newSocket.on('disconnect', () => {
       console.log('Socket disconnected');

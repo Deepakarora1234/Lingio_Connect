@@ -38,8 +38,8 @@ export const auth = async (user) => {
     
   }
 
-  export const fetchTutors = async ()=>{
-    const response = await fetch(`/api/tutor/allTutors`)
+  export const fetchTutors = async (page)=>{
+    const response = await fetch(`/api/tutor/allTutors/${page}`)
     // const responseBody = await response.json()
     if(!response.ok)
     {

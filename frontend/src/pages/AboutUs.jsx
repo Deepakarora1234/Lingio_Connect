@@ -52,7 +52,7 @@ const AboutUs = () => {
                 LinkedIn
               </a>
               <a
-                href="https://github.com/AroraDeepak13"
+                href="https://github.com/Deepakarora1234"
                 className="text-cyan-400 hover:text-cyan-600"
               >
                 GitHub
